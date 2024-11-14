@@ -27,7 +27,12 @@ type state struct {
 }
 
 var (
-	MC            *McServerManager
+	MC = &McServerManager{
+		Logger:  logger.DefaultLogger,
+		servers: make(map[string]*McServer),
+		users:   make(map[string]*McUser),
+	}
+
 	cookieManager *middleware.CookieManager
 )
 
@@ -38,11 +43,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 		return err
 	}
 
-	MC = &McServerManager{
-		router:  router,
-		servers: make(map[string]*McServer),
-		users:   make(map[string]*McUser),
-	}
+	MC.Logger = router.Logger.Clone(nil, true, "nixcraft-manager")
 
 	err = startProxy(router, MC)
 	if err != nil {

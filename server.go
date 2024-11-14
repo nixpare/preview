@@ -12,7 +12,6 @@ import (
 
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/process"
-	"github.com/nixpare/server/v3"
 	"github.com/nixpare/server/v3/commands"
 )
 
@@ -24,7 +23,7 @@ type javaExec struct {
 }
 
 type McServerManager struct {
-	router         *server.Router
+	Logger         *logger.Logger
 	servers        map[string]*McServer
 	users          map[string]*McUser
 	pingIPToServer map[string]*McServer
@@ -59,7 +58,7 @@ func (msm *McServerManager) loadServers() error {
 	for _, srv := range msm.servers {
 		err := srv.Stop(true)
 		if err != nil {
-			msm.router.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error stopping server %s: %v", srv.name, err)
+			msm.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error stopping server %s: %v", srv.name, err)
 			srv.process.Kill()
 		}
 	}
@@ -159,13 +158,13 @@ func (srv *McServer) Start() error {
 
 	err = srv.process.Start(nil, outLog.FixedLogger(logger.LOG_LEVEL_INFO), errLog.FixedLogger(logger.LOG_LEVEL_ERROR))
 	if err != nil {
-		srv.msm.router.Logger.Printf(
+		srv.msm.Logger.Printf(
 			logger.LOG_LEVEL_ERROR,
 			"Minecraft server %v startup error: %v", srv.javaExec, err,
 		)
 		return err
 	}
-	srv.msm.router.Logger.Printf(
+	srv.msm.Logger.Printf(
 		logger.LOG_LEVEL_INFO,
 		"Minecraft server %s started successfully", srv.name,
 	)
@@ -175,7 +174,7 @@ func (srv *McServer) Start() error {
 
 		exitStatus := srv.process.Wait()
 		if err := exitStatus.Error(); err != nil {
-			srv.msm.router.Logger.Printf(
+			srv.msm.Logger.Printf(
 				logger.LOG_LEVEL_ERROR,
 				"Minecraft server %v exit error: %v\n%s",
 				srv.javaExec, err, string(srv.process.Stdout()),
@@ -183,7 +182,7 @@ func (srv *McServer) Start() error {
 			return
 		}
 
-		srv.msm.router.Logger.Printf(
+		srv.msm.Logger.Printf(
 			logger.LOG_LEVEL_INFO,
 			"Minecraft server %s stopped successfully", srv.name,
 		)
