@@ -49,7 +49,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 		return err
 	}
 
-	err = router.TaskManager.NewTask("Minecraft Server", func() (startupF server.TaskFunc, execF server.TaskFunc, cleanupF server.TaskFunc) {
+	err = router.TaskManager.NewTask("Minecraft Server Preview", func() (startupF server.TaskFunc, execF server.TaskFunc, cleanupF server.TaskFunc) {
 		var alreadyOffline bool
 
 		execF = func(_ *server.Task) error {
@@ -72,7 +72,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 	}
 
 	for _, srv := range commandServers {
-		srv.Commands["mc"] = mcCommand(MC)
+		srv.Commands["mc-preview"] = mcCommand(MC)
 	}
 
 	return nil
