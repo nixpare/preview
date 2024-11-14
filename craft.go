@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"pareserver/util"
 	"strconv"
 	"time"
 
@@ -80,7 +79,18 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 }
 
 func Nixcraft() http.Handler {
-	mux, n, _ := util.WebsiteHandler("craft.nixpare.com", basedir+"/public", nix.CookieManagerOption(cookieManager))
+	var err error
+	cookieManager, err = middleware.NewCookieManager([]byte(cookie_hashkey), []byte(cookie_blockkey), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	mux := http.NewServeMux()
+	n := nix.New(nix.CookieManagerOption(cookieManager))
+
+	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
+		ctx.ServeFile(basedir + "/public/" + ctx.RequestPath())
+	}))
 
 	// GET
 	mux.HandleFunc("GET /servers", n.Handle(getAllServers))
