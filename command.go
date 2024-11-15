@@ -189,7 +189,7 @@ Usage: mc [ option [ args ... ] ]
         - send < input >        : sends the provided input to the running server
         - reload                : reloads the server list from the install directory
         - status                : prints the server status
-		- react                 : enable the redirection to vite server
-		- static                : serve static content, disabling the redirect to vite server
+        - react                 : enable the redirection to vite server
+        - static                : serve static content, disabling the redirect to vite server
 `
 }
