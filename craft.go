@@ -90,7 +90,12 @@ func Nixcraft() http.Handler {
 	n := nix.New(nix.CookieManagerOption(cookieManager))
 
 	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
-		ctx.ServeFile(basedir + "/public/" + ctx.RequestPath())
+		if (forwardToReact) {
+			ctx.ReverseProxy(reactAddr)
+			return
+		} else {
+			ctx.ServeFile(basedir + "/public/" + ctx.RequestPath())
+		}
 	}))
 
 	// GET

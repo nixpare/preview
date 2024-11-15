@@ -1,0 +1,128 @@
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+body > * {
+  flex-grow: 1;
+}
+
+body > nav, body > footer {
+  flex-grow: 0;
+}
+
+.logo-img {
+  width: 95%;
+}
+
+.brand-name {
+  font-size: 1.8rem;
+}
+
+:root {
+  --bs-primary: var(--bs-indigo);
+  --bs-primary-rgb: 102, 16, 242;
+}
+
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary-rgb);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: rgba(var(--bs-primary-rgb), 0.8);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #2c4fc3;
+  --bs-btn-active-border-color: #294ab7;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #3763f4;
+  --bs-btn-disabled-border-color: #3763f4;
+}
+
+.btn-primary.disabled {
+  background: rgba(var(--bs-primary-rgb), 0.5);
+}
+
+.show-message {
+  max-width: 30ch;
+  width: fit-content;
+  font-size: 1.2rem;
+  border-radius: 16px;
+  background: rgba(var(--bs-primary-rgb), .8);
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  opacity: 0;
+  transition: top .3s ease-in-out .1s, opacity .3s ease-in-out, z-index 0s 1s;
+}
+
+.show-message.showing {
+  top: 100px;
+  z-index: 2000;
+  opacity: 1;
+  transition: top .4s ease-in-out, opacity .3s ease-in-out .1s;
+}
+
+.show-message > p {
+  margin: .8rem 1.6rem;
+}
+
+.server-status {
+  background: rgba(var(--bs-primary-rgb), 0.5);
+  border-radius: 1rem;
+  color: var(--bs-gray-500);
+  margin-top: 1.2rem;
+  padding: .8rem 1.6rem;
+}
+
+.server-status::before {
+  content: 'Unknown';
+  margin-right: 0.8rem;
+}
+
+.server-status > svg {
+  font-size: 1.6rem;
+  display: none;
+}
+
+.server-status svg:nth-child(1) {
+  display: block;
+}
+
+.server-status.online, .server-status.offline {
+  background: var(--bs-primary);
+  color: var(--bs-white);
+}
+
+.server-status.online svg:nth-child(1), .server-status.offline svg:nth-child(1) {
+  display: none;
+}
+
+.server-status.online::before {
+  content: 'Online';
+}
+
+.server-status.online svg:nth-child(2) {
+  display: block;
+}
+
+.server-status.offline::before {
+  content: 'Offline';
+}
+
+.server-status.offline svg:nth-child(3) {
+  display: block;
+}
+
+.server-status-heading > h3 {
+  margin-left: 1.2rem;
+  margin-bottom: 0;
+}
