@@ -8,11 +8,12 @@ export default defineConfig({
   root: 'src',
   build: {
     target: 'esnext',
-    outDir: '../dist',
+    outDir: '../public',
     emptyOutDir: true,
     rollupOptions: {
       input: [
-        resolve(__dirname, 'src/*.html'),
+        resolve(__dirname, 'src/index.html'),
+        resolve(__dirname, 'src/login.html')
       ]
     },
   },

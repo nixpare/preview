@@ -20,7 +20,7 @@ type mcUser struct {
 	user     *McUser
 }
 
-type state struct {
+type serverInfo struct {
 	Name    string   `json:"name"`
 	Running bool     `json:"running"`
 	Players []string `json:"players"`
@@ -87,9 +87,31 @@ func Nixcraft() http.Handler {
 	}
 
 	mux := http.NewServeMux()
-	n := nix.New(nix.CookieManagerOption(cookieManager))
+	n := nix.New(
+		nix.CookieManagerOption(cookieManager),
+		nix.EnableLoggingOption(),
+		nix.LoggerOption(logger.DefaultLogger),
+		nix.EnableErrorCaptureOption(),
+		nix.EnableRecoveryOption(),
+	)
 
 	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
+		_, trusted := trustUser(ctx)
+		reqPath := ctx.RequestPath()
+
+		switch reqPath {
+		case "/":
+			if (!trusted) {
+				ctx.Redirect("/login", http.StatusTemporaryRedirect)
+				return
+			}
+		case "/login":
+			if (trusted) {
+				ctx.Redirect("/", http.StatusTemporaryRedirect)
+				return
+			}
+		}
+
 		if (forwardToReact) {
 			ctx.ReverseProxy(reactAddr)
 			return
@@ -107,7 +129,7 @@ func Nixcraft() http.Handler {
 	mux.HandleFunc("POST /", n.Handle(func(ctx *nix.Context) {
 		ctx.Error(http.StatusBadRequest, "invalid POST request")
 	}))
-	mux.HandleFunc("POST /{$}", n.Handle(postLogin))
+	mux.HandleFunc("POST /login", n.Handle(postLogin))
 	mux.HandleFunc("POST /{server}/start", n.Handle(postStart))
 	mux.HandleFunc("POST /{server}/stop", n.Handle(postStop))
 	mux.HandleFunc("POST /{server}/connect", n.Handle(postConnect))
@@ -166,9 +188,13 @@ func getAllServers(ctx *nix.Context) {
 
 	MC.mutex.RLock()
 
-	var servers []string
-	for srvName := range MC.servers {
-		servers = append(servers, srvName)
+	var servers []serverInfo
+	for srvName, srv := range MC.servers {
+		servers = append(servers, serverInfo{
+			Name:    srvName,
+			Running: srv.IsRunning(),
+			Players: srv.getOnlinePlayersNoLock(),
+		})
 	}
 
 	MC.mutex.RUnlock()
@@ -202,7 +228,7 @@ func getServerState(ctx *nix.Context) {
 		return
 	}
 
-	serverState := state{
+	serverState := serverInfo{
 		Name:    srvName,
 		Running: srv.IsRunning(),
 		Players: srv.getOnlinePlayersNoLock(),
