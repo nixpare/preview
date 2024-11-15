@@ -12,7 +12,7 @@ export default function CraftServerList({onMessage}: ServerListProps) {
       axios.get('/servers')
       .then((response: AxiosResponse) => {
         setServers(response.data);
-        console.log(response);
+        console.log(response.data);
       })
       .catch((error: AxiosError) => {
         onMessage(`${error.message}`);
@@ -23,9 +23,14 @@ export default function CraftServerList({onMessage}: ServerListProps) {
     <>
       <h1>Server List</h1>
       <ul>
-        {servers?.map((server: any) => (
-          <li key={server.id}>{server.name}</li>
-        ))}
+        {servers?.map((server: any) => {
+          const onlineState = server.online ? 'Online' : 'Offline'
+          const playerCount = server.online ? `- Players: ${server.players.length}` : undefined
+
+          return (
+            <li key={server.name}>{server.name} - {onlineState} {playerCount}</li>
+          )
+        })}
       </ul>
     </>
   )
