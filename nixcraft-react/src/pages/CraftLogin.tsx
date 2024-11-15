@@ -7,7 +7,7 @@ type FormValues = {
   password: string;
 }
 
-type LoginProps = {
+export type LoginProps = {
   onLogin: (username: string) => void,
   onMessage: (message: string) => void
 };

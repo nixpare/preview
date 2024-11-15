@@ -2,18 +2,21 @@ import './assets/css/bootstrap.min.css';
 import './assets/css/style.css';
 
 import { useState } from 'react'
-import Login from './pages/CraftLogin';
+import Login, { LoginProps } from './pages/CraftLogin';
 import CraftServerList from './pages/CraftServerList';
-import CraftServer from './pages/CraftServer';
+import CraftServer, { ServerProps } from './pages/CraftServer';
 import Footer from './components/Footer';
 import { Snackbar } from '@mui/material';
+import { ServerListProps } from './pages/CraftServerList';
 
 type PageName = 'Login' | 'Server' | 'ServerList';
 type Pages = {
   [key in PageName]: JSX.ElementType;
 }
 type PagesProps = {
-  [key in PageName]: {};
+  'Login': LoginProps,
+  'ServerList': ServerListProps,
+  'Server': ServerProps
 }
 
 export default function App() {
