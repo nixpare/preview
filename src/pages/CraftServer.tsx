@@ -1,3 +1,6 @@
+export type ServerProps = {
+}
+
 export default function CraftServer() {
   return (
     <>

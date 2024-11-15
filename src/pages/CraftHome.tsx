@@ -3,16 +3,18 @@ import '../assets/css/style.css';
 
 import { useState } from 'react'
 import CraftServerList from './CraftServerList';
-import CraftServer from './CraftServer';
+import CraftServer, { ServerProps } from './CraftServer';
 import Footer from '../components/Footer';
 import { Snackbar } from '@mui/material';
+import { ServerListProps } from './CraftServerList';
 
 type PageName = 'Server' | 'ServerList';
 type Pages = {
 	[key in PageName]: JSX.ElementType;
 }
 type PagesProps = {
-	[key in PageName]: {};
+	'ServerList': ServerListProps,
+	'Server': ServerProps
 }
 
 export default function App() {

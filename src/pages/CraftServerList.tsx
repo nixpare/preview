@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from "axios"
 import { useEffect, useState } from "react";
 
-type ServerListProps = {
+export type ServerListProps = {
   onMessage: (message: string) => void
 }
 
