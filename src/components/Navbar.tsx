@@ -1,3 +1,5 @@
+import logo from '../assets/img/icon.png'
+
 export type NavbarProps = {
     showLogoutButton: boolean;
     onLogout: () => void
@@ -9,7 +11,7 @@ export default function Navbar({showLogoutButton, onLogout}: NavbarProps) {
       <div className="container">
           <a className="navbar-brand d-flex align-items-center" href="/">
             <span className="bs-icon-md bs-icon-circle d-flex justify-content-center align-items-center me-2 bs-icon">
-              <img className="logo-img" src="/assets/img/icon.png" style={{
+            <img className="logo-img" src={logo} style={{
                 background: "radial-gradient(circle at center, #fff5 0, var(--bs-body-bg) 50%, var(--bs-body-bg) 100%)",
                 borderRadius: "50%"
               }} />

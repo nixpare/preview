@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nixpare/logger/v3"
@@ -133,7 +134,12 @@ func Nixcraft() http.Handler {
 			ctx.ReverseProxy(reactAddr)
 			return
 		} else {
-			ctx.ServeFile(basedir + "/public/" + ctx.RequestPath())
+			path := ctx.RequestPath()
+			if path != "/" && !strings.Contains(path, ".") {
+				path += ".html"
+			}
+
+			ctx.ServeFile(basedir + "/public" + path)
 		}
 	}))
 
