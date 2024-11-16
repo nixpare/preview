@@ -24,14 +24,25 @@ type PagesProps = {
 }
 
 function CraftHome() {
-	const [pageName, _] = useState('ServerList' as PageName);
+	const [pageName, setPageName] = useState('ServerList' as PageName);
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
+	const [currentServer, setCurrentServer] = useState("" as string);
 
 	const showMessage = (message: string): void => {
 		setOpenSnackbar(true);
 		setErrorMessage(message);
 	};
+
+	const showDetails = (serverName: string): void => {
+		setPageName('Server');
+		setCurrentServer(serverName);
+	}
+
+	const backToList = (): void => {
+		setPageName('ServerList');
+		setCurrentServer("");
+	}
 
 	const pages: Pages = {
 		'ServerList': CraftServerList,
@@ -39,8 +50,8 @@ function CraftHome() {
 	};
 
 	const pagesProps: PagesProps = {
-		'ServerList': { onMessage: showMessage },
-		'Server': {}
+		'ServerList': { onMessage: showMessage, onShowDetails: showDetails },
+		'Server': { backToList, serverName: currentServer, onMessage: showMessage }
 	};
 
 	const logout = async () => {

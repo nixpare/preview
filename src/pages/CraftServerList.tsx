@@ -1,11 +1,13 @@
+import { Button } from "@mui/material";
 import axios, { AxiosError, AxiosResponse } from "axios"
 import { useEffect, useState } from "react";
 
 export type ServerListProps = {
-  onMessage: (message: string) => void
+  onMessage: (message: string) => void,
+  onShowDetails: (serverName: string) => void
 }
 
-export default function CraftServerList({onMessage}: ServerListProps) {
+export default function CraftServerList({onMessage, onShowDetails}: ServerListProps) {
   const [servers, setServers] = useState([]);
 
   useEffect(() => {
@@ -27,8 +29,12 @@ export default function CraftServerList({onMessage}: ServerListProps) {
           const onlineState = server.online ? 'Online' : 'Offline'
           const playerCount = server.online ? `- Players: ${server.players.length}` : undefined
 
+          const handleClick = () => {
+            onShowDetails(server.name);
+          }
+
           return (
-            <li key={server.name}>{server.name} - {onlineState} {playerCount}</li>
+            <li key={server.name}>{server.name} - {onlineState} {playerCount} <Button onClick={handleClick}>Show</Button></li>
           )
         })}
       </ul>
