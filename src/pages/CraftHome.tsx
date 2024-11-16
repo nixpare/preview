@@ -7,6 +7,8 @@ import CraftServer, { ServerProps } from './CraftServer';
 import Footer from '../components/Footer';
 import { Snackbar } from '@mui/material';
 import { ServerListProps } from './CraftServerList';
+import Navbar from '../components/Navbar';
+import axios from 'axios';
 
 type PageName = 'Server' | 'ServerList';
 type Pages = {
@@ -17,7 +19,7 @@ type PagesProps = {
 	'Server': ServerProps
 }
 
-export default function App() {
+export default function CraftHome() {
 	const [pageName, _] = useState('ServerList' as PageName);
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
@@ -37,11 +39,18 @@ export default function App() {
 		'Server': {}
 	};
 
+	const logout = async () => {
+        localStorage.removeItem('username');
+        await axios.get('/logout');
+        window.location.href = '/login';
+	}
+
 	const Page = pages[pageName];
 	const pageProps = pagesProps[pageName];
 
 	return (
 		<>
+			<Navbar showLogoutButton onLogout={logout}/>
 			<Page {...pageProps} />
 
 			<Footer />

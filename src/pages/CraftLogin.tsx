@@ -5,6 +5,7 @@ import axios, { AxiosError } from 'axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Snackbar, Stack } from '@mui/material';
 import { useState } from 'react';
+import Navbar from '../components/Navbar';
 
 type FormValues = {
   username: string;
@@ -35,6 +36,7 @@ export default function CraftLogin() {
 
   return (
     <>
+      <Navbar />
       <h1>Login</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
