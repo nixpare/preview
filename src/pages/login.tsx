@@ -1,18 +1,22 @@
-import '../assets/css/bootstrap.min.css';
-import '../assets/css/style.css';
-
 import axios, { AxiosError } from 'axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Snackbar, Stack } from '@mui/material';
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import Navbar from '../components/Navbar';
+import { createRoot } from 'react-dom/client';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <CraftLogin />
+  </StrictMode>,
+)
 
 type FormValues = {
   username: string;
   password: string;
 }
 
-export default function CraftLogin() {
+function CraftLogin() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 

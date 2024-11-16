@@ -1,7 +1,4 @@
-import '../assets/css/bootstrap.min.css';
-import '../assets/css/style.css';
-
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import CraftServerList from './CraftServerList';
 import CraftServer, { ServerProps } from './CraftServer';
 import Footer from '../components/Footer';
@@ -9,6 +6,13 @@ import { Snackbar } from '@mui/material';
 import { ServerListProps } from './CraftServerList';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
+import { createRoot } from 'react-dom/client';
+
+createRoot(document.getElementById('root')!).render(
+	<StrictMode>
+		<CraftHome />
+	</StrictMode>,
+)
 
 type PageName = 'Server' | 'ServerList';
 type Pages = {
@@ -19,7 +23,7 @@ type PagesProps = {
 	'Server': ServerProps
 }
 
-export default function CraftHome() {
+function CraftHome() {
 	const [pageName, _] = useState('ServerList' as PageName);
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
