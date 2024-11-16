@@ -42,12 +42,12 @@ type McServer struct {
 var mcPrivatePortOffset = new(atomic.Int32)
 
 func mcServerCmd(f string) (string, []string, int) {
-	port := mc_public_port + mcPrivatePortOffset.Add(1)
+	port := mc_public_port + int(mcPrivatePortOffset.Add(1))
 	return "java", []string{"-Xms4G", "-Xmx8G", "-jar", f, "--port", fmt.Sprint(port), "nogui"}, int(port)
 }
 
 func mcModdedServerCmd(f string) (string, []string, int) {
-	port := mc_public_port + mcPrivatePortOffset.Add(1)
+	port := mc_public_port + int(mcPrivatePortOffset.Add(1))
 	return "cmd.exe", []string{"/c", ".\\" + f, "--port", fmt.Sprint(port), "nogui"}, int(port)
 }
 
