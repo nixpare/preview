@@ -182,14 +182,16 @@ func help(errMessage string) string {
 
 Usage: mc [ option [ args ... ] ]
     Options:
-        - start < server_name > : starts the named server
-        - stop                  : stop the running server
-        - kill                  : kills the running server
-        - connect               : attaches the terminal to the server process, end with CTRL-C
-        - send < input >        : sends the provided input to the running server
-        - reload                : reloads the server list from the install directory
-        - status                : prints the server status
-        - react                 : enable the redirection to vite server
-        - static                : serve static content, disabling the redirect to vite server
+        - start   <server_name> : starts the named server
+        - stop    <server_name> : stop the running server
+        - kill    <server_name> : kills the running server
+
+        - connect <server_name>         : attaches the terminal to the server process, end with CTRL-C
+        - send    <server_name> <input> : sends the provided input to the running server
+
+        - reload : reloads the servers list from the install directory
+        - status : prints the servers status
+        - react  : enable the redirection to vite server
+        - static : serve static content, disabling the redirect to vite server
 `
 }

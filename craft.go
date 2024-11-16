@@ -2,6 +2,7 @@ package craft
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -34,6 +35,22 @@ var (
 	}
 
 	cookieManager *middleware.CookieManager
+)
+
+type existingConnErr struct {
+	ip string
+}
+
+func (e existingConnErr) Error() string {
+	return fmt.Sprintf("%v: %s", errExistingConn, e.ip)
+}
+
+func (e existingConnErr) Unwrap() error {
+	return errExistingConn
+}
+
+var (
+	errExistingConn = errors.New("an existing connection is active from a different location")
 )
 
 func CraftInit(router *server.Router, commandServers []*commands.CommandServer) error {
@@ -96,17 +113,17 @@ func Nixcraft() http.Handler {
 	)
 
 	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
-		_, trusted := trustUser(ctx)
+		_, err := trustUser(ctx)
 		reqPath := ctx.RequestPath()
 
 		switch reqPath {
 		case "/":
-			if (!trusted) {
+			if err != nil {
 				ctx.Redirect("/login", http.StatusTemporaryRedirect)
 				return
 			}
 		case "/login":
-			if (trusted) {
+			if err == nil {
 				ctx.Redirect("/", http.StatusTemporaryRedirect)
 				return
 			}
@@ -138,19 +155,17 @@ func Nixcraft() http.Handler {
 	return mux
 }
 
-func trustUser(ctx *nix.Context) (mcUser, bool) {
+func trustUser(ctx *nix.Context) (mcUser, error) {
 	var user mcUser
 	err := ctx.GetCookiePerm(nixcraft_cookie_name, &user)
 	if err != nil {
 		ctx.DeleteCookie(nixcraft_cookie_name)
-		ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
-		return user, false
+		return user, err
 	}
 
 	if user.Passcode != nixcraft_passcode {
 		ctx.DeleteCookie(nixcraft_cookie_name)
-		ctx.Error(http.StatusUnauthorized, "Unauthorized request", "invalid passcode")
-		return user, false
+		return user, errors.New("invalid passcode")
 	}
 
 	ip := server.SplitAddrPort(ctx.R().RemoteAddr)
@@ -169,20 +184,31 @@ func trustUser(ctx *nix.Context) (mcUser, bool) {
 	user.user = value
 
 	if value.conn != nil && value.ip != ip {
-		return user, false
+		ctx.DeleteCookie(nixcraft_cookie_name)
+		return user, existingConnErr{ ip: value.ip }
 	}
 
 	value.ip = ip
 	value.t = time.Now()
-	return user, true
+	return user, nil
+}
+
+func handleTrustUserResult(ctx *nix.Context, err error) {
+	if ipErr, ok := err.(existingConnErr); ok {
+		ctx.Error(http.StatusUnauthorized, fmt.Sprintf("Already connected from %s", ipErr.ip))
+		return
+	}
+	
+	ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
 }
 
 func getAllServers(ctx *nix.Context) {
 	ctx.DisableErrorCapture()
 	ctx.DisableLogging()
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -214,8 +240,9 @@ func getServerState(ctx *nix.Context) {
 
 	srvName := ctx.R().PathValue("server")
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -275,8 +302,9 @@ func postLogin(ctx *nix.Context) {
 func postStart(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -292,8 +320,9 @@ func postStart(ctx *nix.Context) {
 func postStop(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -309,12 +338,13 @@ func postStop(ctx *nix.Context) {
 func postConnect(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
-	err := user.user.ConnectToServer(srvName)
+	err = user.user.ConnectToServer(srvName)
 	if err != nil {
 		ctx.Error(http.StatusBadGateway, fmt.Sprintf("Server %s not found", srvName), err)
 		return
@@ -339,8 +369,9 @@ type logRequest struct {
 func postCmd(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -353,7 +384,7 @@ func postCmd(ctx *nix.Context) {
 	}
 
 	var cmdReq logRequest
-	err := ctx.ReadJSON(&cmdReq)
+	err = ctx.ReadJSON(&cmdReq)
 	if err != nil {
 		ctx.Error(http.StatusBadRequest, err.Error())
 		return
