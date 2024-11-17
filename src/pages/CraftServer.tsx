@@ -1,3 +1,5 @@
+import '../assets/css/CraftServer.css'
+
 import { Button } from "@mui/material";
 import axios, { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
@@ -79,6 +81,30 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
             {serverInfo.running && <p>Online Players: {serverInfo.players.length}</p>}
             <Button onClick={startServer} disabled={serverInfo.running}>Start Server</Button>
             <Button onClick={stopServer} disabled={!serverInfo.running}>Stop Server</Button>
+            <ServerLogs serverName={serverName} onMessage={onMessage} />
         </>
+    )
+}
+
+type ServerLogsProps = {
+    serverName: string;
+    onMessage: (message: string) => void;
+}
+
+function ServerLogs({ serverName, onMessage }: ServerLogsProps) {
+    const ws = new WebSocket(`/ws/${serverName}/console`)
+    ws.onmessage = (ev) => {
+        console.log(ev)
+    }
+    ws.onerror = (ev) => {
+        console.log(ev)
+    }
+    
+    return (
+        <div className="server-logs">
+            <ul>
+                {}
+            </ul>
+        </div>
     )
 }

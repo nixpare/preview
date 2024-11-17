@@ -487,6 +487,11 @@ func wsServerConsole(ctx *nix.Context) {
 		return
 	}
 
+	if !srv.IsRunning() || srv.log == nil {
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s is not running", srvName))
+		return
+	}
+
 	conn, err := websocket.Accept(ctx, ctx.R(), nil)
 	if err != nil {
 		ctx.Error(http.StatusBadRequest, "Invalid Request", err)

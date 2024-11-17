@@ -26,9 +26,12 @@ export default function CraftServerList({onMessage, onShowDetails}: ServerListPr
     const serverList = response.data.map((server: ServerInfo) => {
       if (!server.players) {
         server.players = [];
+      } else {
+        server.players = server.players.sort()
       }
+
       return server;
-    });
+    }).sort((a, b) => a.name.localeCompare(b.name));
 
     setServers(serverList);
   }
@@ -36,7 +39,7 @@ export default function CraftServerList({onMessage, onShowDetails}: ServerListPr
   useEffect(() => {
       getServers();
 
-      const interval = setInterval(() => getServers(), 2000);
+      const interval = setInterval(() => getServers(), 10_000);
 
       return () => {
         clearInterval(interval);
