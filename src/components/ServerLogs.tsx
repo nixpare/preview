@@ -1,5 +1,5 @@
 import { Updater, useImmer } from "use-immer";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from 'axios';
 
 type ServerLogsProps = {
@@ -17,7 +17,8 @@ export default function ServerLogs({ serverName, onMessage }: ServerLogsProps) {
         console.log('new ws')
         
         updateLogs((logs) => {
-            logs = []
+            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
+            logs.length = 0
         });
         setConnected(true);
 
