@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -148,7 +149,11 @@ func sendCmdsOverStdin(ln chanListener) {
 			logger.Printf(logger.LOG_LEVEL_WARNING, "Command terminated with code %d\n", exitCode)
 		}
 
-		fmt.Print("Press enter to disconnect from the command ...")
+		if runtime.GOOS == "windows" {
+			// Perchè lo sa solo Microsoft di merda
+			fmt.Print("Press enter to disconnect from the command ...")
+		}
+		
 		requiredCTRLC--
 	}
 }
