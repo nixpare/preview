@@ -46,11 +46,6 @@ func mcServerCmd(f string) (string, []string, int) {
 	return "java", []string{"-Xms4G", "-Xmx8G", "-jar", f, "--port", fmt.Sprint(port), "nogui"}, int(port)
 }
 
-func mcModdedServerCmd(f string) (string, []string, int) {
-	port := mc_public_port + int(mcPrivatePortOffset.Add(1))
-	return "cmd.exe", []string{"/c", ".\\" + f, "--port", fmt.Sprint(port), "nogui"}, int(port)
-}
-
 func (msm *McServerManager) loadServers() error {
 	msm.mutex.Lock()
 	defer msm.mutex.Unlock()
@@ -75,20 +70,6 @@ loop:
 			continue
 		}
 		dir := mc_servers_path + "/" + e.Name()
-
-		child, err := os.Stat(dir + "/run.bat")
-		if err == nil && !child.IsDir() && child.Name() == "run.bat" {
-			execName, args, port := mcModdedServerCmd(child.Name())
-			msm.servers[e.Name()] = &McServer{
-				name: e.Name(),
-				javaExec: javaExec{
-					execName: execName, args: args,
-					wd: dir, port: port,
-				},
-				msm: msm,
-			}
-			continue
-		}
 
 		childs, _ := os.ReadDir(dir)
 		for _, child := range childs {
@@ -170,8 +151,6 @@ func (srv *McServer) Start() error {
 	)
 
 	go func() {
-		defer func() { srv.process = nil }()
-
 		exitStatus := srv.process.Wait()
 		if err := exitStatus.Error(); err != nil {
 			srv.msm.Logger.Printf(
@@ -263,7 +242,7 @@ func (srv *McServer) SendInput(payload string) error {
 }
 
 func (mc *McServer) IsRunning() bool {
-	return mc.process != nil
+	return mc.process != nil && mc.process.IsRunning()
 }
 
 func (srv *McServer) Connect(sc *commands.ServerConn) error {
@@ -312,6 +291,7 @@ func (srv *McServer) Connect(sc *commands.ServerConn) error {
 
 		srv.process.SendText(in.Message)
 	}
+
 	return nil
 }
 
