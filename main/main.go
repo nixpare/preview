@@ -38,7 +38,7 @@ func main() {
 	go cmdServer.ListenAndServe()
 	defer cmdServer.Shutdown()
 
-	go sendCmdsOverStdin(ln)
+	go sendCmdsFromStdin(ln)
 
 	exitC := make(chan os.Signal, 10)
 	signal.Notify(exitC, os.Interrupt)

@@ -22,7 +22,7 @@ func newChanListener() chanListener {
 }
 
 func (ch chanListener) Accept() (net.Conn, error) {
-	conn, ok := <- ch
+	conn, ok := <-ch
 	if !ok {
 		return nil, net.ErrClosed
 	}
@@ -91,12 +91,12 @@ func dialChan(ln chanListener) (conn net.Conn, err error) {
 
 	clientConn := &chanConn{
 		ReadCloser: clientRd,
-		Writer: clientWr,
+		Writer:     clientWr,
 	}
 
 	serverConn := &chanConn{
 		ReadCloser: serverRd,
-		Writer: serverWr,
+		Writer:     serverWr,
 	}
 
 	ln <- serverConn
@@ -112,27 +112,27 @@ func newCommandServer(ln net.Listener, l *logger.Logger, router *server.Router) 
 	return cmdServer, nil
 }
 
-func cmdOverPipe(ln chanListener, stdin io.Reader, stdout, stderr io.Writer, cmd string, args ...string) (exitCode int) {
-    var err error
-    exitCode, err = commands.SendCommand(
-        func() (net.Conn, error) {
+func cmdOverChan(ln chanListener, stdin io.Reader, stdout, stderr io.Writer, cmd string, args ...string) (exitCode int) {
+	var err error
+	exitCode, err = commands.SendCommand(
+		func() (net.Conn, error) {
 			return dialChan(ln)
 		},
-        stdin, stdout, stderr,
-        cmd, args...,
-    )
-    if err != nil {
-        if exitCode == -1 {
-            exitCode = 1
-            logger.Printf(logger.LOG_LEVEL_ERROR, "Command connection error: %v\n", err)
-        } else {
-            logger.Printf(logger.LOG_LEVEL_ERROR, "Command error: %v\n", err)
-        }
-    }
-    return
+		stdin, stdout, stderr,
+		cmd, args...,
+	)
+	if err != nil {
+		if exitCode == -1 {
+			exitCode = 1
+			logger.Printf(logger.LOG_LEVEL_ERROR, "Command connection error: %v\n", err)
+		} else {
+			logger.Printf(logger.LOG_LEVEL_ERROR, "Command error: %v\n", err)
+		}
+	}
+	return
 }
 
-func sendCmdsOverStdin(ln chanListener) {
+func sendCmdsFromStdin(ln chanListener) {
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
 		cmd, argStr, _ := strings.Cut(sc.Text(), " ")
@@ -140,10 +140,10 @@ func sendCmdsOverStdin(ln chanListener) {
 
 		requiredCTRLC++
 
-		exitCode := cmdOverPipe(
+		exitCode := cmdOverChan(
 			ln,
 			os.Stdin, os.Stdout, os.Stderr,
-			cmd, args...
+			cmd, args...,
 		)
 		if exitCode != 0 {
 			logger.Printf(logger.LOG_LEVEL_WARNING, "Command terminated with code %d\n", exitCode)
@@ -153,7 +153,7 @@ func sendCmdsOverStdin(ln chanListener) {
 			// Perchè lo sa solo Microsoft di merda
 			fmt.Print("Press enter to disconnect from the command ...")
 		}
-		
+
 		requiredCTRLC--
 	}
 }
