@@ -2,8 +2,8 @@ import '../assets/css/CraftServer.css'
 
 import { Button } from "@mui/material";
 import axios, { AxiosError, AxiosResponse } from "axios";
-import { Updater, useImmer } from "use-immer";
 import { useEffect, useState } from "react";
+import ServerLogs from '../components/ServerLogs';
 
 export type ServerProps = {
     backToList: () => void;
@@ -81,9 +81,8 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
 
     return (
         <>
-            <h1>Server</h1>
+            <h1>Server {serverName}</h1>
             <Button onClick={backToList}>Back</Button>
-            <h2>{serverName}</h2>
             <p>{serverInfo.running ? 'Online' : 'Offline'}</p>
             {serverInfo.running && <p>Online Players: {serverInfo.players.length}</p>}
             <Button onClick={startServer} disabled={serverInfo.running}>Start Server</Button>
@@ -91,72 +90,4 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
             <ServerLogs serverName={serverName} onMessage={onMessage} />
         </>
     )
-}
-
-type ServerLogsProps = {
-    serverName: string;
-    onMessage: (message: string) => void;
-}
-
-function ServerLogs({ serverName, onMessage }: ServerLogsProps) {
-    const [connected, setConnected] = useState(false)
-    const [logs, updateLogs] = useImmer([] as any[]);
-
-    useEffect(() => {
-        if (connected)
-            return
-        setConnected(true)
-
-        console.log('new ws')
-        
-        updateLogs((logs) => {
-            logs.length = 0
-        })
-        queryServerLogs({ serverName, onMessage }, setConnected, updateLogs)
-    }, [connected]);
-
-    useEffect(() => {
-        console.log(logs.length)
-    }, [logs])
-    
-    return (
-        <div className="server-logs">
-            <ul>
-                {logs.map((log, logIdx) => {
-                    return (
-                        <p key={logIdx}>{log.message}</p>
-                    )
-                })}
-            </ul>
-        </div>
-    );
-}
-
-async function queryServerLogs(
-    { serverName, onMessage }: ServerLogsProps,
-    setConnected: (connected: boolean) => void,
-    updateLogs: Updater<any[]>
-) {
-    const url = `/ws/${serverName}/console`;
-
-    const response = await axios.get(url)
-        .catch(err => {
-            onMessage(err.response.data);
-        });
-
-    if (response == undefined)
-        return;
-
-    const ws = new WebSocket(url)
-    ws.onclose = () => {
-        setConnected(false)
-    }
-    ws.onmessage = (ev) => {
-        updateLogs(logs => {
-            logs.push(JSON.parse(ev.data))
-        })
-    }
-    ws.onerror = () => {
-        onMessage('Server connection error')
-    }
 }
