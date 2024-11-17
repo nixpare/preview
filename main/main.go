@@ -10,6 +10,8 @@ import (
 	"github.com/nixpare/server/v3/commands"
 )
 
+var requiredCTRLC int
+
 func main() {
 	router := server.NewRouter(nil)
 
@@ -41,5 +43,9 @@ func main() {
 	exitC := make(chan os.Signal, 10)
 	signal.Notify(exitC, os.Interrupt)
 
-	<- exitC
+	for range exitC {
+		if requiredCTRLC == 0 {
+			break
+		}
+	}
 }

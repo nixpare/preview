@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -124,9 +123,9 @@ func cmdOverPipe(ln chanListener, stdin io.Reader, stdout, stderr io.Writer, cmd
     if err != nil {
         if exitCode == -1 {
             exitCode = 1
-            log.Printf("Command connection error: %v\n", err)
+            logger.Printf(logger.LOG_LEVEL_ERROR, "Command connection error: %v\n", err)
         } else {
-            log.Printf("Command error: %v\n", err)
+            logger.Printf(logger.LOG_LEVEL_ERROR, "Command error: %v\n", err)
         }
     }
     return
@@ -138,13 +137,18 @@ func sendCmdsOverStdin(ln chanListener) {
 		cmd, argStr, _ := strings.Cut(sc.Text(), " ")
 		args := strings.Split(argStr, " ")
 
+		requiredCTRLC++
+
 		exitCode := cmdOverPipe(
 			ln,
-			nil, os.Stdout, os.Stderr,
+			os.Stdin, os.Stdout, os.Stderr,
 			cmd, args...
 		)
 		if exitCode != 0 {
-			log.Printf("Command terminated with code %d\n", exitCode)
+			logger.Printf(logger.LOG_LEVEL_WARNING, "Command terminated with code %d\n", exitCode)
 		}
+
+		fmt.Print("Press enter to disconnect from the command ...")
+		requiredCTRLC--
 	}
 }
