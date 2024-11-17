@@ -135,9 +135,14 @@ func cmdOverPipe(ln chanListener, stdin io.Reader, stdout, stderr io.Writer, cmd
 func sendCmdsOverStdin(ln chanListener) {
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
-		cmd, args, _ := strings.Cut(sc.Text(), " ")
-		
-		exitCode := cmdOverPipe(ln, nil, os.Stdout, os.Stderr, cmd, args)
+		cmd, argStr, _ := strings.Cut(sc.Text(), " ")
+		args := strings.Split(argStr, " ")
+
+		exitCode := cmdOverPipe(
+			ln,
+			nil, os.Stdout, os.Stderr,
+			cmd, args...
+		)
 		if exitCode != 0 {
 			log.Printf("Command terminated with code %d\n", exitCode)
 		}
