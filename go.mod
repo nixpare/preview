@@ -31,5 +31,3 @@ require (
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 )
-
-replace github.com/nixpare/server/v3 v3.0.0-beta.4 => /Users/pare/Documents/Coding/Github/server/server/v3
