@@ -1,3 +1,5 @@
+github.com/coder/websocket v1.8.12 h1:5bUXkEPPIbewrnkU8LTCLVaxi4N4J8ahufH2vlo4NAo=
+github.com/coder/websocket v1.8.12/go.mod h1:LNVeNrXQZfe5qhS9ALED3uA+l5pPqvwXg3CKoDBB2gs=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
@@ -24,6 +26,8 @@ github.com/nixpare/broadcaster v1.2.1 h1:eit04tSQgKCBvF0lFOQKaMUdVGgIvgwkQdIhvil
 github.com/nixpare/broadcaster v1.2.1/go.mod h1:IC56SeoQvQGqaqJ06HUN5zMlCLB2NoKNOXo2zNmsp7w=
 github.com/nixpare/logger/v3 v3.0.2 h1:nl1+yLa8xeY2KvzUJR2+TTFFvGw/PPjyBpsNNOQq5K8=
 github.com/nixpare/logger/v3 v3.0.2/go.mod h1:8zWWJSZ8eIMCq+y1sPU3t0CkOUfbxdEFCQvZfZc0a64=
+github.com/nixpare/logger/v3 v3.0.3 h1:y++S00s0+pyJvEjb7oUYMoAbUUjbl4Pv/SwCGxYyw7A=
+github.com/nixpare/logger/v3 v3.0.3/go.mod h1:8zWWJSZ8eIMCq+y1sPU3t0CkOUfbxdEFCQvZfZc0a64=
 github.com/nixpare/nix v0.1.0 h1:zT+gpf/QcrVHkFgGxUadPK+NOSCQAjtF8o8nrUJZGUA=
 github.com/nixpare/nix v0.1.0/go.mod h1:elq1AoqtFj1CsCyj/1FKfJlShtb2gAmzoJ6KdC+g4qU=
 github.com/nixpare/process v1.6.7 h1:HBNzg/Vdskv7Bm8vESxXpLZXXPz7BoDzE/PLXbmpTWU=

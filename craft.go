@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/nix"
 	"github.com/nixpare/nix/middleware"
@@ -157,6 +158,9 @@ func Nixcraft() http.Handler {
 	mux.HandleFunc("POST /{server}/stop", n.Handle(postStop))
 	mux.HandleFunc("POST /{server}/connect", n.Handle(postConnect))
 	mux.HandleFunc("POST /{server}/cmd", n.Handle(postCmd))
+
+	// WebSocket
+	mux.HandleFunc("GET /ws/{server}/console", n.Handle(wsServerConsole))
 
 	return mux
 }
@@ -459,4 +463,70 @@ func postCmd(ctx *nix.Context) {
 		ctx.Error(http.StatusBadRequest, "Unknown command")
 		return
 	}
+}
+
+func wsServerConsole(ctx *nix.Context) {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
+	}
+
+	if !ctx.IsWebSocketRequest() {
+		ctx.Error(http.StatusBadRequest, "Invalid Request")
+		return
+	}
+
+	srvName := ctx.R().PathValue("server")
+
+	MC.mutex.RLock()
+	srv, ok := MC.servers[srvName]
+	MC.mutex.RUnlock()
+
+	if !ok {
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
+		return
+	}
+
+	conn, err := websocket.Accept(ctx, ctx.R(), nil)
+	if err != nil {
+		ctx.Error(http.StatusBadRequest, "Invalid Request", err)
+	}
+	defer conn.CloseNow()
+
+	prevLogs, ch := srv.log.ListenForLogs(20)
+	defer ch.Unregister()
+
+	for _, log := range srv.log.GetLogs(0, prevLogs) {
+		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
+		if err != nil {
+			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
+			return
+		}
+	}
+
+	go func() {
+		for {
+			_, b, err := conn.Read(ctx.R().Context())
+			if err != nil {
+				ctx.AddInteralMessage(fmt.Sprintf("websocket: read error: %v", err))
+				return
+			}
+
+			cmd := string(b)
+			err = srv.SendInput(cmd)
+			if err != nil {
+				srv.log.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.name, cmd, err)
+			}
+		}
+	}()
+	
+	for log := range ch.Ch() {
+		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
+		if err != nil {
+			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
+			return
+		}
+	}
+	
+	conn.Close(websocket.StatusNormalClosure, "")
 }
