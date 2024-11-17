@@ -28,14 +28,14 @@ function CraftLogin() {
       }).catch((error: AxiosError) => {
         console.log(error)
         setErrorMessage(`${error.message}`);
-        setOpenSnackbar(true)
+        setOpenSnackbar(true);
       });
 
       if (response == undefined || response.status >= 400)
         return
 
-      localStorage.setItem('username', data.username)
-      window.location.href = '/'
+      localStorage.setItem('username', data.username);
+      window.location.href = '/';
     }
 
   return (

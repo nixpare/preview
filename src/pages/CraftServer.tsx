@@ -1,5 +1,5 @@
 import { Button } from "@mui/material";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 
 export type ServerProps = {
@@ -14,12 +14,16 @@ export type ServerInfo = {
     name: string;
 }
 
+interface AxiosResponseServer extends AxiosResponse{
+    data: ServerInfo;
+}
+
 export default function CraftServer({backToList, serverName, onMessage}: ServerProps) {
     const [serverInfo, setServerInfo] = useState({name: serverName} as ServerInfo);
     const [serverStarted, setServerStarted] = useState(serverInfo.running);
 
     const startServer = async () => {
-        const response = await axios.post(`/${serverName}/start`)
+        const response = await axios.post(`/${serverName}/start`);
 
         if (response.status === 200) {
             onMessage('Server started');
@@ -30,7 +34,7 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
     }
 
     const stopServer = async () => {
-        const response = await axios.post(`/${serverName}/stop`)
+        const response = await axios.post(`/${serverName}/stop`);
 
         if (response.status === 200) {
             onMessage('Server stopped');
@@ -41,7 +45,7 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
     }
 
     const getServer = async () => {
-        const response = await axios.get(`/${serverName}/status`)
+        const response = await axios.get(`/${serverName}/status`) as AxiosResponseServer;
 
         if (response.status !== 200) {
             onMessage(`${response.statusText}`);
