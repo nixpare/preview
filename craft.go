@@ -471,11 +471,6 @@ func wsServerConsole(ctx *nix.Context) {
 		handleTrustUserResult(ctx, err)
 	}
 
-	if !ctx.IsWebSocketRequest() {
-		ctx.Error(http.StatusBadRequest, "Invalid Request")
-		return
-	}
-
 	srvName := ctx.R().PathValue("server")
 
 	MC.mutex.RLock()
@@ -492,16 +487,24 @@ func wsServerConsole(ctx *nix.Context) {
 		return
 	}
 
+	// Questo permette al client prima di inviare una richiesta http normale e vedere se ci può
+	// essere qualche errore, quindi in caso di richiesta valida allora aprirà la connessione
+	// websocket vera
+	if !ctx.IsWebSocketRequest() {
+		return
+	}
+
 	conn, err := websocket.Accept(ctx, ctx.R(), nil)
 	if err != nil {
 		ctx.Error(http.StatusBadRequest, "Invalid Request", err)
 	}
 	defer conn.CloseNow()
 
-	prevLogs, ch := srv.log.ListenForLogs(20)
+	prevLogsN, ch := srv.log.ListenForLogs(20)
 	defer ch.Unregister()
 
-	for _, log := range srv.log.GetLogs(0, prevLogs) {
+	prevLogs := srv.log.GetLogs(0, prevLogsN)
+	for _, log := range prevLogs {
 		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
 		if err != nil {
 			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
