@@ -5,7 +5,7 @@ export type NavbarProps = {
     onLogout: () => void
 }
 
-export default function Navbar({showLogoutButton, onLogout}: NavbarProps) {
+export default function Navbar({showLogoutButton=false, onLogout=() => {}}: NavbarProps) {
 
     return <nav className="navbar navbar-dark navbar-expand-md sticky-top py-3" id="mainNav">
       <div className="container">
@@ -21,9 +21,4 @@ export default function Navbar({showLogoutButton, onLogout}: NavbarProps) {
           <button className={"btn btn-primary " + (!showLogoutButton && "d-none")} type="button" onClick={onLogout}>Logout</button>
       </div>
     </nav>;
-}
-
-Navbar.defaultProps = {
-    showLogoutButton: false,
-    onLogout: () => {}
 }

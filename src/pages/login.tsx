@@ -40,7 +40,7 @@ function CraftLogin() {
 
   return (
     <>
-      <Navbar />
+      <Navbar showLogoutButton={false} onLogout={() => {}}/>
       <h1>Login</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
