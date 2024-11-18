@@ -4,7 +4,7 @@ go 1.23.2
 
 require (
 	github.com/coder/websocket v1.8.12
-	github.com/nixpare/logger/v3 v3.0.3
+	github.com/nixpare/logger/v3 v3.0.4
 	github.com/nixpare/nix v0.1.0
 	github.com/nixpare/process v1.6.7
 	github.com/nixpare/server/v3 v3.0.0-beta.5

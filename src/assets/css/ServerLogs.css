@@ -1,0 +1,9 @@
+.log-message {
+	white-space: pre-wrap;
+	text-align: left;
+}
+
+.log-message.collapsed > div {
+	height: 5em;
+	overflow-y: auto;
+}

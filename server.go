@@ -121,6 +121,8 @@ func (msm *McServerManager) Start(name string) error {
 	return srv.Start()
 }
 
+func noTrimFunc (s string) string { return s }
+
 func (srv *McServer) Start() error {
 	if srv.IsRunning() {
 		return fmt.Errorf("server %s already running", srv.name)
@@ -133,11 +135,34 @@ func (srv *McServer) Start() error {
 	}
 
 	srv.log = logger.NewLogger(nil)
-	srv.userLog = srv.log.Clone(nil, true, "user")
-	outLog := srv.log.Clone(nil, true, "stdout")
-	errLog := srv.log.Clone(nil, true, "stderr")
+	srv.log.TrimFunc = noTrimFunc
 
-	err = srv.process.Start(nil, outLog.FixedLogger(logger.LOG_LEVEL_INFO), errLog.FixedLogger(logger.LOG_LEVEL_ERROR))
+	srv.userLog = srv.log.Clone(nil, true, "user")
+	srv.userLog.TrimFunc = noTrimFunc
+
+	outLog := srv.log.Clone(nil, true, "stdout")
+	outLog.TrimFunc = noTrimFunc
+	outLogWriter := outLog.FixedLogger(logger.LOG_LEVEL_INFO)
+
+	errLog := srv.log.Clone(nil, true, "stderr")
+	errLog.TrimFunc = noTrimFunc
+	errLogWriter := errLog.FixedLogger(logger.LOG_LEVEL_ERROR)
+
+	stdoutCh := srv.process.StdoutListener(20)
+	stderrCh := srv.process.StderrListener(20)
+
+	go func() {
+		for line := range stdoutCh {
+			outLogWriter.Write(append(line, '\n'))
+		}
+	}()
+	go func() {
+		for line := range stderrCh {
+			errLogWriter.Write(append(line, '\n'))
+		}
+	}()
+
+	err = srv.process.Start(nil, nil, nil)
 	if err != nil {
 		srv.msm.Logger.Printf(
 			logger.LOG_LEVEL_ERROR,
