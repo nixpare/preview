@@ -4,31 +4,33 @@ import axios from 'axios';
 
 type ServerLogsProps = {
     serverName: string;
+    serverStarted: boolean;
     onMessage: (message: string) => void;
 }
 
-export default function ServerLogs({ serverName, onMessage }: ServerLogsProps) {
-    const [connected, setConnected] = useState(false)
+export default function ServerLogs({ serverName, serverStarted, onMessage }: ServerLogsProps) {
+    const [ws, setWs] = useState(undefined as WebSocket | undefined)
     const [logs, updateLogs] = useImmer([] as any[]);
 
     useEffect(() => {
-        if (connected) return
+        if (ws != undefined && !serverStarted) {
+            ws.close()
+            return
+        }
 
-        console.log('new ws')
-        
-        updateLogs((logs) => {
-            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
-            logs.length = 0
-        });
-        setConnected(true);
+        if (ws == undefined && !serverStarted)
+            return
 
-        queryServerLogs({ serverName, onMessage }, setConnected, updateLogs);
-    }, [serverName]);
+        if (ws != undefined)
+            return
+
+        queryServerLogs(serverName, onMessage, setWs, updateLogs);
+    }, [serverStarted]);
     
     return (
         <div className="server-logs">
             <ul>
-                {connected && logs.map((log, logIdx) => {
+                {logs.map((log, logIdx) => {
                     return (
                         <p key={logIdx}>{log.message}</p>
                     )
@@ -39,8 +41,8 @@ export default function ServerLogs({ serverName, onMessage }: ServerLogsProps) {
 }
 
 async function queryServerLogs(
-    { serverName, onMessage }: ServerLogsProps,
-    setConnected: (connected: boolean) => void,
+    serverName: string, onMessage: (message: string) => void,
+    setWs: (ws: WebSocket | undefined) => void,
     updateLogs: Updater<any[]>
 ) {
     const url = `/ws/${serverName}/console`;
@@ -51,12 +53,18 @@ async function queryServerLogs(
         });
 
     if (response == undefined)
-        return;
+        return undefined;
 
     const ws = new WebSocket(url)
 
+    ws.onopen = () => {
+        updateLogs((logs) => {
+            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
+            logs.length = 0
+        });
+    }
     ws.onclose = () => {
-        setConnected(false)
+        setWs(undefined)
     }
     ws.onmessage = (ev) => {
         updateLogs(logs => {
@@ -66,4 +74,6 @@ async function queryServerLogs(
     ws.onerror = () => {
         onMessage('Server connection error')
     }
+
+    setWs(ws)
 }

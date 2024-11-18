@@ -23,7 +23,7 @@ interface AxiosResponseServer extends AxiosResponse{
 
 export default function CraftServer({backToList, serverName, onMessage}: ServerProps) {
     const [serverInfo, setServerInfo] = useState({name: serverName} as ServerInfo);
-    const [serverStarted, setServerStarted] = useState(serverInfo.running);
+    const [serverStarted, setServerStarted] = useState(serverInfo.running ?? false);
 
     const startServer = async () => {
         const response = await axios.post(`/${serverName}/start`);
@@ -69,6 +69,10 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
     }
 
     useEffect(() => {
+        setServerStarted(serverInfo.running);
+    }, [serverInfo])
+
+    useEffect(() => {
         getServer();
 
         const interval = setInterval(() => getServer(), 2000);
@@ -87,7 +91,7 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
             {serverInfo.running && <p>Online Players: {serverInfo.players.length}</p>}
             <Button onClick={startServer} disabled={serverInfo.running}>Start Server</Button>
             <Button onClick={stopServer} disabled={!serverInfo.running}>Stop Server</Button>
-            <ServerLogs serverName={serverName} onMessage={onMessage} />
+            <ServerLogs serverName={serverName} serverStarted={serverStarted} onMessage={onMessage} />
         </>
     )
 }

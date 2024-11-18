@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import CraftServerList from './CraftServerList';
 import CraftServer, { ServerProps } from './CraftServer';
 import Footer from '../components/Footer';
@@ -9,7 +9,9 @@ import axios from 'axios';
 import { createRoot } from 'react-dom/client';
 
 createRoot(document.getElementById('root')!).render(
-	<CraftHome />
+	<StrictMode>
+		<CraftHome />
+	</StrictMode>
 )
 
 type PageName = 'Server' | 'ServerList';
