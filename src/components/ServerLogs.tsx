@@ -50,7 +50,7 @@ export default function ServerLogs({ serverName, serverStarted, onMessage }: Ser
     
     return (
         <div className="server-logs">
-            <table className="table table-dark table-borderless align-middle text-center text-wrap" style={{whiteSpace: 'pre-wrap'}}>
+            <table className="table table-dark table-borderless align-middle text-center text-wrap logs-table" style={{whiteSpace: 'pre-wrap'}}>
                 <thead>
                     <tr>
                         <th scope="col">TIME</th>
@@ -82,14 +82,18 @@ function Log({ log }: { log: ParsedLog }) {
         <td>{log.date}</td>
         <td>{log.from}</td>
         <td style={{ color: log.levelColor }}>{log.level}</td>
-        <td className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
-            <div className="message">{log.message}</div>
-            <i className="fa-solid fa-chevron-right"></i>
-            <div className="tags">
-                Tags:
-                {log.tags.map(tag => (
-                    <p>{tag}</p>
-                ))}
+        <td>
+            <div className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
+                <div className="message">
+                    {log.message}
+                </div>
+                <i className="fa-solid fa-chevron-right"></i>
+                <div className="tags">
+                    Tags:
+                    {log.tags.map(tag => (
+                        <p>{tag}</p>
+                    ))}
+                </div>
             </div>
         </td>
     </tr>

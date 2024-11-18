@@ -1,12 +1,46 @@
+.server-logs {
+	margin-top: 2em;
+	--border-radius: .5em;
+}
+
+.server-logs > table > thead > tr:first-child > th:first-child {
+	border-top-left-radius: var(--border-radius);
+}
+
+.server-logs>table>thead>tr:first-child>th:last-child {
+	border-top-right-radius: var(--border-radius);
+}
+
+.server-logs>table>tbody>tr:last-child>td:first-child {
+	border-bottom-left-radius: var(--border-radius);
+}
+
+.server-logs>table>tbody>tr:last-child>td:last-child {
+	border-bottom-right-radius: var(--border-radius);
+}
+
+.server-logs>table th, .server-logs>table td {
+	font-size: .95em;
+	padding: .4em 1em;
+}
+
 .log-message {
-	white-space: pre-wrap;
 	text-align: left;
 	position: relative;
 	cursor: pointer;
+	overflow-x: auto;
+	max-width: 60vw;
+}
+
+.log-message > .message {
+	width: fit-content;
+	white-space: pre-wrap;
+	text-wrap: nowrap;
+	margin-bottom: .4em;
 }
 
 .log-message.multiline > .message {
-	max-height: 8ch;
+	max-height: 5ch;
 	overflow-y: hidden;
 }
 
@@ -42,9 +76,28 @@
 }
 
 .log-message > .tags > p {
-	font-size: .8em;
-	padding: .4em .8em;
-	margin: 0;
 	border-radius: .4em;
 	background-color: rgba(255, 255, 255, .4);
+}
+
+.log-message::-webkit-scrollbar {
+	height: .5em;
+}
+
+/* Track */
+.log-message::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, .2);
+	border-radius: .5em;
+}
+
+/* Handle */
+.log-message::-webkit-scrollbar-thumb {
+	background-color: rgba(255, 255, 255, .2);
+	border-radius: .5em;
+	transition: background-color .3s;
+}
+
+/* Handle on hover */
+.log-message::-webkit-scrollbar-thumb:hover {
+	background-color: rgba(255, 255, 255, .3);
 }
