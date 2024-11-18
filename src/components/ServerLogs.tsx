@@ -1,7 +1,7 @@
 import '../assets/css/ServerLogs.css'
 
 import { Updater, useImmer } from "use-immer";
-import { useEffect, useState } from "react";
+import { useEffect, useState, MouseEvent } from "react";
 import axios from 'axios';
 
 type ServerLogsProps = {
@@ -19,18 +19,19 @@ type ServerLog = {
     tags: string[]
 }
 
-type Log = {
+type ParsedLog = {
     id: string
     date: string
     from: string
     level: string
     levelColor: string
     message: string
+    tags: string[]
 }
 
 export default function ServerLogs({ serverName, serverStarted, onMessage }: ServerLogsProps) {
     const [ws, setWs] = useState(undefined as WebSocket | undefined)
-    const [logs, updateLogs] = useImmer([] as Log[]);
+    const [logs, updateLogs] = useImmer([] as ParsedLog[]);
 
     useEffect(() => {
         if (ws != undefined && !serverStarted) {
@@ -59,22 +60,39 @@ export default function ServerLogs({ serverName, serverStarted, onMessage }: Ser
                     </tr>
                 </thead>
                 <tbody>
-                    {logs.map(log => {
-                        const collapsed = log.message.includes('\n') ? 'collapsed' : ''
-
-                        return <tr key={log.id}>
-                            <td>{log.date}</td>
-                            <td>{log.from}</td>
-                            <td style={{ color: log.levelColor }}>{log.level}</td>
-                            <td className={`log-message ${collapsed}`}>
-                                <div>{log.message}</div>
-                            </td>
-                        </tr>
-                    })}
+                    {logs.map(log => (
+                        <Log key={log.id} log={log} />
+                    ))}
                 </tbody>
             </table>
         </div>
     );
+}
+
+function Log({ log }: { log: ParsedLog }) {
+    const multiline = log.message.includes('\n') ? 'multiline' : ''
+
+    const [showing, setShowing] = useState(false)
+    const toggleShowing = (ev: MouseEvent) => {
+        ev.preventDefault()
+        setShowing(!showing)
+    }
+
+    return <tr>
+        <td>{log.date}</td>
+        <td>{log.from}</td>
+        <td style={{ color: log.levelColor }}>{log.level}</td>
+        <td className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
+            <div className="message">{log.message}</div>
+            <i className="fa-solid fa-chevron-right"></i>
+            <div className="tags">
+                Tags:
+                {log.tags.map(tag => (
+                    <p>{tag}</p>
+                ))}
+            </div>
+        </td>
+    </tr>
 }
 
 async function queryServerLogs(
@@ -116,7 +134,7 @@ async function queryServerLogs(
     setWs(ws)
 }
 
-function parseLog(log: ServerLog, logs: Log[]) {
+function parseLog(log: ServerLog, logs: ParsedLog[]) {
     let from: string, level: string, levelColor: string;
     let message = log.message
 
@@ -182,5 +200,9 @@ function parseLog(log: ServerLog, logs: Log[]) {
         return
     }
 
-    logs.push({ id: log.id, date, from, level, levelColor, message }) 
+    logs.push({
+        id: log.id, date: date,
+        from: from, level: level, levelColor: levelColor,
+        message: message, tags: log.tags
+    })
 }

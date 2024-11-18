@@ -1,9 +1,50 @@
 .log-message {
 	white-space: pre-wrap;
 	text-align: left;
+	position: relative;
+	cursor: pointer;
 }
 
-.log-message.collapsed > div {
-	height: 5em;
-	overflow-y: auto;
+.log-message.multiline > .message {
+	max-height: 8ch;
+	overflow-y: hidden;
+}
+
+.log-message.multiline.show > .message {
+	max-height: unset;
+}
+
+.log-message:not(.multiline) > i {
+	display: none;
+}
+
+.log-message.multiline > i {
+	position: absolute;
+	right: 2em;
+	top: 2em;
+	transition: transform .3s;
+}
+
+.log-message.multiline.show > i {
+	transform: rotate(90deg);
+}
+
+.log-message > .tags {
+	display: none;
+}
+
+.log-message.show > .tags {
+	margin-top: 1em;
+	display: flex;
+	align-items: center;
+	gap: 1em;
+	flex-wrap: wrap;
+}
+
+.log-message > .tags > p {
+	font-size: .8em;
+	padding: .4em .8em;
+	margin: 0;
+	border-radius: .4em;
+	background-color: rgba(255, 255, 255, .4);
 }
