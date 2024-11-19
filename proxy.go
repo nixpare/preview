@@ -45,7 +45,7 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	packetID := buf1[0]
 
 	switch packetID {
-	case 0x12 /* default */, 0x18 /* fabric client */:
+	case 0x12 /* default */, 0x18 /* fabric client */, 0x10 /* multimc client */:
 		packetType := buf1[n-1]
 		switch packetType {
 		case 0x1: // old ping
