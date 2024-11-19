@@ -45,6 +45,21 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
         }
     }
 
+    const connectToServer = async () => {
+        const response = await axios.post(`/${serverName}/connect`)
+            .catch((err: AxiosError)=> {
+                onMessage(err.message);
+        });
+
+        if (response == undefined) return;
+
+        if (response.status >= 400) {
+            onMessage('Failed to connect to server');
+        } else {
+            onMessage('Connected to server');   
+        }
+    }
+
     const getServer = async () => {
         const response = await axios.get(`/${serverName}/status`)
             .catch((err: AxiosError) => {
@@ -89,6 +104,11 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
             {serverInfo.running && <p>Online Players: {serverInfo.players.length}</p>}
             <Button onClick={startServer} disabled={serverInfo.running}>Start Server</Button>
             <Button onClick={stopServer} disabled={!serverInfo.running}>Stop Server</Button>
+            {serverStarted && <div>
+                <h3>Please click this button to enable the connection between the server and your minecraft client:</h3>
+                <Button onClick={connectToServer}>Connect</Button>
+            </div>
+            }
             <ServerLogs serverName={serverName} serverStarted={serverStarted} onMessage={onMessage} />
         </>
     )
