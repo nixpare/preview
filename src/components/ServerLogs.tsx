@@ -29,23 +29,21 @@ type ParsedLog = {
     tags: string[]
 }
 
+let ws = false as WebSocket | boolean
+
 export default function ServerLogs({ serverName, serverStarted, onMessage }: ServerLogsProps) {
-    const [ws, setWs] = useState(undefined as WebSocket | undefined)
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
 
     useEffect(() => {
-        if (ws != undefined && !serverStarted) {
-            ws.close()
-            return
+        if (ws || !serverStarted) return
+
+        ws = true
+        queryServerLogs(serverName, onMessage, updateLogs);
+
+        return () => {
+            //@ts-ignore
+            ws && ws.close && ws.close()
         }
-
-        if (ws == undefined && !serverStarted)
-            return
-
-        if (ws != undefined)
-            return
-
-        queryServerLogs(serverName, onMessage, setWs, updateLogs);
     }, [serverStarted]);
     
     return (
@@ -91,7 +89,7 @@ function Log({ log }: { log: ParsedLog }) {
                 <div className="tags">
                     Tags:
                     {log.tags.map(tag => (
-                        <p>{tag}</p>
+                        <p key={tag}>{tag}</p>
                     ))}
                 </div>
             </div>
@@ -101,7 +99,6 @@ function Log({ log }: { log: ParsedLog }) {
 
 async function queryServerLogs(
     serverName: string, onMessage: (message: string) => void,
-    setWs: (ws: WebSocket | undefined) => void,
     updateLogs: Updater<any[]>
 ) {
     const url = `/ws/${serverName}/console`;
@@ -114,8 +111,7 @@ async function queryServerLogs(
     if (response == undefined)
         return undefined;
 
-    const ws = new WebSocket(url)
-
+    ws = new WebSocket(url)
     ws.onopen = () => {
         updateLogs((logs) => {
             // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
@@ -123,7 +119,7 @@ async function queryServerLogs(
         });
     }
     ws.onclose = () => {
-        setWs(undefined)
+        ws = false
     }
     ws.onmessage = (ev) => {
         updateLogs(logs => {
@@ -134,8 +130,6 @@ async function queryServerLogs(
     ws.onerror = () => {
         onMessage('Server connection error')
     }
-
-    setWs(ws)
 }
 
 function parseLog(log: ServerLog, logs: ParsedLog[]) {

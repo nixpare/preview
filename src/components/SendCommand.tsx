@@ -1,62 +1,51 @@
-import { Button, TextField } from "@mui/material"
-import axios from "axios";
-import { useContext, useState } from "react";
-import UserContext from "../contexts/userContext";
+import '../assets/css/SendCommand.css'
 
-export type Command = "send-broadcast" | "send";
+import { Button } from "@mui/material"
+import axios from "axios";
+import { useState } from "react";
 
 export type SendCommandProps = {
     showMessage: (message: string) => void;
     route: string;
     prefix?: string;
-    cmd: Command;
-}
-
-type AxiosCommandBody = {
-    cmd: Command;
-    args: string[];
+    cmd: string;
 }
 
 export default ({showMessage, route, cmd, prefix=""}: SendCommandProps) => {
     const [command, setCommand] = useState(prefix);
-    const user = useContext(UserContext).user;
-
-    const body: AxiosCommandBody = {
-        cmd,
-        args: [user, command]
-    };
 
     const send = async () => {
-        const response = await axios.post(route, body)
+        const response = await axios.post(route, command)
         .catch((error) => {
             showMessage(error.message);
         });
 
         if (!response) return;
 
-        setCommand("");
+        setCommand(prefix);
         if (response.status >= 400)
-            showMessage(response.statusText);
+            showMessage(response.data);
 
     }
 
     const changeCommand = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (prefix !== "" && !event.target.value.startsWith(prefix))
-            setCommand(prefix + event.target.value);
-        else
-            setCommand(event.target.value);
+        if (event.target.value == "")
+            event.target.value = prefix
+
+        setCommand(event.target.value);
+    }
+
+    const handleEnter = (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            send();
+        }
     }
 
     return (
-        <div>
-            <h3>{cmd}</h3> {/*We need to add a label prop.*/}
-            <TextField variant="outlined" value={command} onChange={changeCommand}/>
-            
-            <Button onClick={send} onKeyUp={(event) => {
-                if (event.key === 'Enter') {
-                    send();
-                }
-            }}>Send</Button>
+        <div className='send-command'>
+            <h5>{cmd}</h5> {/*We need to add a label prop.*/}
+            <input type="text" value={command} onChange={changeCommand} onKeyDown={handleEnter} />
+            <Button onClick={send}>Send</Button>
         </div>
     )    
 }

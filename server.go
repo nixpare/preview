@@ -1,15 +1,18 @@
 package craft
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/nixpare/broadcaster"
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/process"
 	"github.com/nixpare/server/v3/commands"
@@ -23,20 +26,41 @@ type javaExec struct {
 }
 
 type McServerManager struct {
-	Logger         *logger.Logger
-	servers        map[string]*McServer
+	Logger         *logger.Logger       `json:"-"`
+	Servers        map[string]*McServer `json:"servers"`
 	users          map[string]*McUser
 	pingIPToServer map[string]*McServer
 	mutex          sync.RWMutex
+
+	UpdateBroadcaster *broadcaster.Broadcaster[[]byte] `json:"-"`
 }
 
 type McServer struct {
-	name string
+	Name    string    `json:"name"`
+	Players []*McUser `json:"players"`
 	javaExec
 	msm     *McServerManager
 	process *process.Process
 	log     *logger.Logger
 	userLog *logger.Logger
+}
+
+type McUser struct {
+	Name string `json:"name"`
+	IP   string `json:"ip"`
+
+	server *McServer
+	conn   net.Conn
+	t      time.Time
+
+	updateBroadcaster *broadcaster.Broadcaster[[]byte]
+}
+
+func newMcUser(username string) *McUser {
+	return &McUser{
+		Name:              username,
+		updateBroadcaster: broadcaster.NewBroadcaster[[]byte](),
+	}
 }
 
 var mcPrivatePortOffset = new(atomic.Int32)
@@ -50,14 +74,14 @@ func (msm *McServerManager) loadServers() error {
 	msm.mutex.Lock()
 	defer msm.mutex.Unlock()
 
-	for _, srv := range msm.servers {
+	for _, srv := range msm.Servers {
 		err := srv.Stop(true)
 		if err != nil {
-			msm.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error stopping server %s: %v", srv.name, err)
+			msm.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error stopping server %s: %v", srv.Name, err)
 			srv.process.Kill()
 		}
 	}
-	clear(msm.servers)
+	clear(msm.Servers)
 
 	entries, err := os.ReadDir(mc_servers_path)
 	if err != nil {
@@ -79,8 +103,8 @@ loop:
 
 			if strings.HasPrefix(child.Name(), "server") && strings.HasSuffix(child.Name(), ".jar") {
 				execName, args, port := mcServerCmd(child.Name())
-				msm.servers[e.Name()] = &McServer{
-					name: e.Name(),
+				msm.Servers[e.Name()] = &McServer{
+					Name: e.Name(),
 					javaExec: javaExec{
 						execName: execName, args: args,
 						wd: dir, port: port,
@@ -95,7 +119,7 @@ loop:
 
 	for _, user := range msm.users {
 		if user.server != nil {
-			user.server = msm.servers[user.server.name]
+			user.server = msm.Servers[user.server.Name]
 		}
 	}
 
@@ -103,29 +127,36 @@ loop:
 	msm.pingIPToServer = make(map[string]*McServer)
 
 	for ip, srv := range oldPingMap {
-		msm.pingIPToServer[ip] = msm.servers[srv.name]
+		msm.pingIPToServer[ip] = msm.Servers[srv.Name]
 	}
 
+	go msm.SignalStateUpdate()
 	return nil
 }
 
 func (msm *McServerManager) Start(name string) error {
 	msm.mutex.RLock()
-	srv, ok := msm.servers[name]
+	srv, ok := msm.Servers[name]
 	msm.mutex.RUnlock()
 
 	if !ok {
 		return fmt.Errorf("server %s not found", name)
 	}
 
-	return srv.Start()
+	err := srv.Start()
+	if err != nil {
+		return err
+	}
+
+	msm.SignalStateUpdate()
+	return nil
 }
 
-func noTrimFunc (s string) string { return s }
+func noTrimFunc(s string) string { return s }
 
 func (srv *McServer) Start() error {
 	if srv.IsRunning() {
-		return fmt.Errorf("server %s already running", srv.name)
+		return fmt.Errorf("server %s already running", srv.Name)
 	}
 
 	var err error
@@ -133,6 +164,7 @@ func (srv *McServer) Start() error {
 	if err != nil {
 		return err
 	}
+	srv.process.SysProcAttr.Setpgid = true
 
 	srv.log = logger.NewLogger(nil)
 	srv.log.TrimFunc = noTrimFunc
@@ -172,7 +204,7 @@ func (srv *McServer) Start() error {
 	}
 	srv.msm.Logger.Printf(
 		logger.LOG_LEVEL_INFO,
-		"Minecraft server %s started successfully", srv.name,
+		"Minecraft server %s started successfully", srv.Name,
 	)
 
 	go func() {
@@ -188,7 +220,7 @@ func (srv *McServer) Start() error {
 
 		srv.msm.Logger.Printf(
 			logger.LOG_LEVEL_INFO,
-			"Minecraft server %s stopped successfully", srv.name,
+			"Minecraft server %s stopped successfully", srv.Name,
 		)
 	}()
 
@@ -197,14 +229,20 @@ func (srv *McServer) Start() error {
 
 func (msm *McServerManager) Stop(name string) error {
 	msm.mutex.RLock()
-	srv, ok := msm.servers[name]
+	srv, ok := msm.Servers[name]
 	msm.mutex.RUnlock()
 
 	if !ok {
 		return fmt.Errorf("server %s not found", name)
 	}
 
-	return srv.Stop(false)
+	err := srv.Stop(false)
+	if err != nil {
+		return err
+	}
+
+	msm.SignalStateUpdate()
+	return nil
 }
 
 func (msm *McServerManager) StopAll() error {
@@ -212,10 +250,11 @@ func (msm *McServerManager) StopAll() error {
 	defer msm.mutex.RUnlock()
 
 	var errs []error
-	for _, srv := range msm.servers {
+	for _, srv := range msm.Servers {
 		errs = append(errs, srv.Stop(true))
 	}
 
+	go msm.SignalStateUpdate()
 	return errors.Join(errs...)
 }
 
@@ -252,7 +291,7 @@ func (srv *McServer) Stop(alreadyLocked bool) error {
 
 	exitStatus := srv.process.Wait()
 	if exitStatus.Error() != nil {
-		return fmt.Errorf("minecraft server %s stop error (code: %d): %w", srv.name, exitStatus.ExitCode, exitStatus.ExitError)
+		return fmt.Errorf("minecraft server %s stop error (code: %d): %w", srv.Name, exitStatus.ExitCode, exitStatus.ExitError)
 	}
 
 	return nil
@@ -328,7 +367,7 @@ func (srv *McServer) getOnlinePlayersNoLock() []string {
 		}
 
 		if user.conn != nil {
-			v = append(v, user.name)
+			v = append(v, user.Name)
 		}
 	}
 	return v
@@ -338,12 +377,12 @@ func (user *McUser) ConnectToServer(srvName string) error {
 	MC.mutex.Lock()
 	defer MC.mutex.Unlock()
 
-	srv, ok := MC.servers[srvName]
+	srv, ok := MC.Servers[srvName]
 	if !ok {
-		return fmt.Errorf("user %s connect: server %s not found", user.name, srvName)
+		return fmt.Errorf("user %s connect: server %s not found", user.Name, srvName)
 	}
 
-	MC.pingIPToServer[user.ip] = srv
+	MC.pingIPToServer[user.IP] = srv
 
 	if srv == user.server {
 		return nil
@@ -354,5 +393,61 @@ func (user *McUser) ConnectToServer(srvName string) error {
 	}
 
 	user.server = srv
+	user.SignalStateUpdate()
+
 	return nil
+}
+
+func (msm *McServerManager) SignalStateUpdate() {
+	msm.UpdateBroadcaster.Send(msm.generateState())
+}
+
+func (msm *McServerManager) generateState() []byte {
+	msm.mutex.RLock()
+	defer msm.mutex.RUnlock()
+
+	data, _ := json.Marshal(msm)
+	return data
+}
+
+func (srv *McServer) MarshalJSON() ([]byte, error) {
+	type alias McServer
+
+	jsonServer := struct {
+		*alias
+		Running bool `json:"running"`
+	}{
+		alias:  (*alias)(srv),
+		Running: srv.IsRunning(),
+	}
+
+	return json.Marshal(jsonServer)
+}
+
+func (user *McUser) SignalStateUpdate() {
+	user.updateBroadcaster.Send(user.generateState())
+}
+
+func (user *McUser) generateState() []byte {
+	data, _ := json.Marshal(user)
+	return data
+}
+
+func (user *McUser) MarshalJSON() ([]byte, error) {
+	type alias McUser
+
+	var serverName string
+	if user.server != nil {
+		serverName = user.server.Name
+	}
+
+	jsonUser := struct {
+		*alias
+		Server string `json:"server"`
+	}{
+		alias:  (*alias)(user),
+		Server: serverName,
+	}
+
+	return json.Marshal(jsonUser)
 }

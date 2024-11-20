@@ -4,6 +4,7 @@ go 1.23.2
 
 require (
 	github.com/coder/websocket v1.8.12
+	github.com/nixpare/broadcaster v1.2.1
 	github.com/nixpare/logger/v3 v3.0.4
 	github.com/nixpare/nix v0.1.0
 	github.com/nixpare/process v1.6.7
@@ -16,7 +17,6 @@ require (
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c // indirect
-	github.com/nixpare/broadcaster v1.2.1 // indirect
 	github.com/nixpare/cancelio v1.0.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.20.2 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect

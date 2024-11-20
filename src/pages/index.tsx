@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import CraftServerList from './CraftServerList';
 import CraftServer, { ServerProps } from './CraftServer';
 import Footer from '../components/Footer';
@@ -7,6 +7,8 @@ import { ServerListProps } from './CraftServerList';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { createRoot } from 'react-dom/client';
+import { ServersInfo } from '../models/Server';
+import { User } from '../models/User';
 import UserContext from '../contexts/userContext';
 
 createRoot(document.getElementById('root')!).render(
@@ -24,16 +26,14 @@ type PagesProps = {
 	'Server': ServerProps
 }
 
+let serversWS = false as WebSocket | boolean
+let userWS = false as WebSocket | boolean
+
 function CraftHome() {
 	const [pageName, setPageName] = useState('ServerList' as PageName);
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
 	const [currentServer, setCurrentServer] = useState("" as string);
-
-	let currentUser = localStorage.getItem('username');
-
-	if (currentUser == null) currentUser = "";
-  	const [user, setUser] = useState({user: currentUser});
 
 	const showMessage = (message: string): void => {
 		setOpenSnackbar(true);
@@ -56,13 +56,11 @@ function CraftHome() {
 	};
 
 	const pagesProps: PagesProps = {
-		'ServerList': { onMessage: showMessage, onShowDetails: showDetails },
+		'ServerList': { onShowDetails: showDetails },
 		'Server': { backToList, serverName: currentServer, onMessage: showMessage }
 	};
 
 	const logout = async () => {
-        localStorage.removeItem('username');
-		setUser({user: ""});
         await axios.get('/logout');
         window.location.href = '/login';
 	}
@@ -70,9 +68,25 @@ function CraftHome() {
 	const Page = pages[pageName];
 	const pageProps = pagesProps[pageName];
 
+	const [servers, setServers] = useState(undefined as ServersInfo | undefined)
+	useEffect(() => {
+		if (serversWS) return
+		
+		serversWS = true
+		startServersInfoWS(setServers, showMessage)
+	})
+
+	const [user, setUser] = useState(undefined as User | undefined)
+	useEffect(() => {
+		if (userWS) return
+
+		userWS = true
+		startUserInfoWS(setUser, showMessage)
+	}, [userWS])
+
 	return (
 		<>
-			<UserContext.Provider value={user}>
+			<UserContext.Provider value={{ user: user, servers: servers }}>
 				<Navbar showLogoutButton onLogout={logout}/>
 				<Page {...pageProps} />
 
@@ -88,4 +102,56 @@ function CraftHome() {
 			</UserContext.Provider>
 		</>
 	)
+}
+
+async function startServersInfoWS(
+	setServersInfo: (info: ServersInfo) => void,
+	onMessage: (message: string) => void,
+) {
+	const url = `/ws/servers`;
+
+	const response = await axios.get(url)
+		.catch(err => {
+			onMessage(err.response.data);
+		});
+
+	if (response == undefined) return
+
+	serversWS = new WebSocket(url)
+
+	serversWS.onclose = () => {
+		serversWS = false
+	}
+	serversWS.onmessage = (ev) => {
+		setServersInfo(JSON.parse(ev.data))
+	}
+	serversWS.onerror = () => {
+		onMessage('Server connection error')
+	}
+}
+
+async function startUserInfoWS(
+	setUserInfo: (info: User) => void,
+	onMessage: (message: string) => void,
+) {
+	const url = `/ws/user`;
+
+	const response = await axios.get(url)
+		.catch(err => {
+			onMessage(err.response.data);
+		});
+
+	if (response == undefined) return
+
+	userWS = new WebSocket(url)
+
+	userWS.onclose = () => {
+		userWS = false
+	}
+	userWS.onmessage = (ev) => {
+		setUserInfo(JSON.parse(ev.data))
+	}
+	userWS.onerror = () => {
+		onMessage('Server connection error')
+	}
 }

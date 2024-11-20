@@ -1,9 +1,11 @@
 import { createContext } from "react";
+import { User } from "../models/User";
+import { ServersInfo } from "../models/Server";
 
-type UserContextType = {
-    user: string;
+export type UserContextType = {
+    user?: User
+    servers?: ServersInfo
 };
 
-const ThemeContext = createContext<UserContextType>({user: ""});
-
-export default ThemeContext;
+const UserContext = createContext<UserContextType>({});
+export default UserContext

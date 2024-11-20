@@ -78,6 +78,8 @@
 .log-message > .tags > p {
 	border-radius: .4em;
 	background-color: rgba(255, 255, 255, .4);
+	margin-bottom: 0;
+	padding: .2em .6em;
 }
 
 .log-message::-webkit-scrollbar {

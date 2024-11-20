@@ -4,7 +4,6 @@ import { Snackbar, Stack } from '@mui/material';
 import { StrictMode, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { createRoot } from 'react-dom/client';
-import UserContext from '../contexts/userContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -20,12 +19,11 @@ type FormValues = {
 function CraftLogin() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
-  let currentUser = localStorage.getItem('username');
 
-  if (currentUser == null) currentUser = "";
-  const [user, setUser] = useState({user: currentUser});
+  const { register, handleSubmit } = useForm<FormValues>({defaultValues: {
+    username: localStorage.getItem('username') ?? '',
+  }});
 
-  const { register, handleSubmit } = useForm<FormValues>();
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
       const response = await axios.post(location.href, {
         username: data.username,
@@ -40,31 +38,28 @@ function CraftLogin() {
         return
 
       localStorage.setItem('username', data.username);
-      setUser({user: data.username});
       window.location.href = '/';
     }
 
   return (
     <>
-    <UserContext.Provider value={user}>
-        <Navbar showLogoutButton={false} onLogout={() => {}}/>
-        <h1>Login</h1>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={2}>
-            <input {...register("username")} className='form-control' placeholder='Username'/>
-            <input type={"password"} {...register("password")} className='form-control' placeholder='Password'/>
-            <input type="submit" value={"Login"} className="btn btn-primary shadow d-block w-100"/>
-          </Stack>
+      <Navbar showLogoutButton={false} onLogout={() => {}}/>
+      <h1>Login</h1>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <Stack spacing={2}>
+          <input type="text" {...register("username")} className='form-control' placeholder='Username' autoComplete='username' />
+          <input type="password" {...register("password")} className='form-control' placeholder='Password' autoComplete='current-password' />
+          <button type="submit" className="btn btn-primary shadow d-block w-100">Login</button>
+        </Stack>
 
-        </form>
-        <Snackbar
-          open={openSnackbar}
-          message={errorMessage}
-          autoHideDuration={6000}
-          onClose={() => { setOpenSnackbar(false) }}
-          onClick={() => { setOpenSnackbar(false) }}
-        />
-      </UserContext.Provider>
+      </form>
+      <Snackbar
+        open={openSnackbar}
+        message={errorMessage}
+        autoHideDuration={6000}
+        onClose={() => { setOpenSnackbar(false) }}
+        onClick={() => { setOpenSnackbar(false) }}
+      />
     </>
   )
 }

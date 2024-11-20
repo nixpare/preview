@@ -5,20 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"time"
 
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/server/v3"
 )
-
-type McUser struct {
-	name string
-	ip   string
-
-	server *McServer
-	conn   net.Conn
-	t      time.Time
-}
 
 func startProxy(router *server.Router, msm *McServerManager) error {
 	tcpSrv, err := router.NewTCPServer("", mc_public_port, false)
@@ -45,7 +35,7 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	packetID := buf1[0]
 
 	switch packetID {
-	case 0x12 /* default */, 0x18 /* fabric client */, 0x10 /* multimc client */:
+	case 0x12 /* default */, 0x18 /* fabric client */, 0x10 /* multimc client */ :
 		packetType := buf1[n-1]
 		switch packetType {
 		case 0x1: // old ping
@@ -124,7 +114,7 @@ func acceptConnection(msm *McServerManager, userName string, addr string) (*McUs
 		return nil, nil, false
 	}
 
-	if addr != user.ip || user.conn != nil {
+	if addr != user.IP || user.conn != nil {
 		return nil, nil, false
 	}
 

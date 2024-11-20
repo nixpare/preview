@@ -26,8 +26,6 @@ github.com/nixpare/broadcaster v1.2.1 h1:eit04tSQgKCBvF0lFOQKaMUdVGgIvgwkQdIhvil
 github.com/nixpare/broadcaster v1.2.1/go.mod h1:IC56SeoQvQGqaqJ06HUN5zMlCLB2NoKNOXo2zNmsp7w=
 github.com/nixpare/cancelio v1.0.0 h1:yGi5yh5ajwOvLZ1o7uT2QNi77NcGA3UY7A4hPx0dhJA=
 github.com/nixpare/cancelio v1.0.0/go.mod h1:bHbyBzQPv3duHiMKqIjzyaAxVVeWhsR7geHlAKcFID0=
-github.com/nixpare/logger/v3 v3.0.3 h1:y++S00s0+pyJvEjb7oUYMoAbUUjbl4Pv/SwCGxYyw7A=
-github.com/nixpare/logger/v3 v3.0.3/go.mod h1:8zWWJSZ8eIMCq+y1sPU3t0CkOUfbxdEFCQvZfZc0a64=
 github.com/nixpare/logger/v3 v3.0.4 h1:C9tRAolX41z47BdSnza/i/n05Zt19gjB92M98fART/k=
 github.com/nixpare/logger/v3 v3.0.4/go.mod h1:8zWWJSZ8eIMCq+y1sPU3t0CkOUfbxdEFCQvZfZc0a64=
 github.com/nixpare/nix v0.1.0 h1:zT+gpf/QcrVHkFgGxUadPK+NOSCQAjtF8o8nrUJZGUA=

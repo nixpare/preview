@@ -1,58 +1,24 @@
 import { Button } from "@mui/material";
-import axios, { AxiosResponse } from "axios"
-import { useEffect, useState } from "react";
-import { ServerInfo } from './CraftServer';
+import { useContext } from "react";
+import UserContext from "../contexts/userContext";
 
 export type ServerListProps = {
-  onMessage: (message: string) => void,
   onShowDetails: (serverName: string) => void
 }
 
-interface AxiosResponseServerList extends AxiosResponse{
-  data: ServerInfo[];
-}
+export default function CraftServerList({ onShowDetails }: ServerListProps) {
+  const { user, servers } = useContext(UserContext)
 
-export default function CraftServerList({onMessage, onShowDetails}: ServerListProps) {
-  const [servers, setServers] = useState([] as ServerInfo[]);
-
-  const getServers = async () => {
-    const response = await axios.get('/servers') as AxiosResponseServerList;
-
-    if (response.status !== 200) {
-      onMessage(response.statusText);
-      return;
-    }
-
-    const serverList = response.data.map((server: ServerInfo) => {
-      if (!server.players) {
-        server.players = [];
-      } else {
-        server.players = server.players.sort()
-      }
-
-      return server;
-    }).sort((a, b) => a.name.localeCompare(b.name));
-
-    setServers(serverList);
-  }
-
-  useEffect(() => {
-      getServers();
-
-      const interval = setInterval(() => getServers(), 10_000);
-
-      return () => {
-        clearInterval(interval);
-      }
-  }, []);
+  if (!user || !servers)
+    return undefined
 
   return (
     <>
       <h1>Server List</h1>
       <ul>
-        {servers?.map((server: ServerInfo) => {
+        {servers.servers && Object.values(servers.servers).map(server => {
           const onlineState = server.running ? 'Online' : 'Offline';
-          const playerCount = server.running ? `- Players: ${server.players.length}` : undefined;
+          const playerCount = server.running ? `- Players: ${server.players?.length ?? 0}` : undefined;
 
           const handleClick = () => {
             onShowDetails(server.name);

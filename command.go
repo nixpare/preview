@@ -38,7 +38,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "kill":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -50,7 +50,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "send":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -62,7 +62,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "connect":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -96,7 +96,7 @@ func taskCheckUsers(msm *McServerManager, alreadyOffline *bool) error {
 	defer msm.mutex.Unlock()
 
 	now := time.Now()
-	for _, srv := range msm.servers {
+	for _, srv := range msm.Servers {
 		var playing bool
 
 		for userName, user := range msm.users {
@@ -136,16 +136,16 @@ func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 	sb.WriteString("\nNixcraft Server Status:\n")
 
 	sb.WriteString("\nInstalled servers: [ ")
-	for srvName := range msm.servers {
+	for srvName := range msm.Servers {
 		sb.WriteString("\n        ")
 		sb.WriteString(srvName)
 	}
-	if len(msm.servers) != 0 {
+	if len(msm.Servers) != 0 {
 		sb.WriteString("\n")
 	}
 	sb.WriteString("]\n")
 
-	for srvName, srv := range msm.servers {
+	for srvName, srv := range msm.Servers {
 		sb.WriteString("\n  - ")
 		sb.WriteString(srvName)
 
