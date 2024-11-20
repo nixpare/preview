@@ -2,6 +2,7 @@ import { Button } from "@mui/material";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import ServerLogs from '../components/ServerLogs';
+import SendCommand from "../components/SendCommand";
 
 export type ServerProps = {
     backToList: () => void;
@@ -110,6 +111,10 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
             </div>
             }
             <ServerLogs serverName={serverName} serverStarted={serverStarted} onMessage={onMessage} />
+            {serverStarted && <div>
+                <SendCommand cmd="send" route={`/${serverName}/cmd`} showMessage={onMessage} prefix="/"/>
+                <SendCommand cmd="send-broadcast" route={`/${serverName}/cmd`} showMessage={onMessage}/>
+            </div>}
         </>
     )
 }
