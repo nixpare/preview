@@ -34,3 +34,6 @@ package-lock.json
 *.sln
 *.sw?
 
+# Mc-Server directories
+
+mc-servers

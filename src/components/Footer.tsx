@@ -1,8 +1,7 @@
 export default function Footer() {
     return <>
-        <footer className="bg-dark" style={{
-            position: "absolute",
-            bottom: 0,
+        <footer style={{
+            marginTop: '2em'
         }}>
             <p>Copyright © 2023 NixPare</p>
         </footer>

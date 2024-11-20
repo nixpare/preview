@@ -2,11 +2,14 @@ package craft
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/coder/websocket"
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/nix"
 	"github.com/nixpare/nix/middleware"
@@ -34,6 +37,22 @@ var (
 	}
 
 	cookieManager *middleware.CookieManager
+)
+
+type existingConnErr struct {
+	ip string
+}
+
+func (e existingConnErr) Error() string {
+	return fmt.Sprintf("%v: %s", errExistingConn, e.ip)
+}
+
+func (e existingConnErr) Unwrap() error {
+	return errExistingConn
+}
+
+var (
+	errExistingConn = errors.New("an existing connection is active from a different location")
 )
 
 func CraftInit(router *server.Router, commandServers []*commands.CommandServer) error {
@@ -96,17 +115,17 @@ func Nixcraft() http.Handler {
 	)
 
 	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
-		_, trusted := trustUser(ctx)
+		_, err := trustUser(ctx)
 		reqPath := ctx.RequestPath()
 
 		switch reqPath {
 		case "/":
-			if (!trusted) {
+			if err != nil {
 				ctx.Redirect("/login", http.StatusTemporaryRedirect)
 				return
 			}
 		case "/login":
-			if (trusted) {
+			if err == nil {
 				ctx.Redirect("/", http.StatusTemporaryRedirect)
 				return
 			}
@@ -116,7 +135,12 @@ func Nixcraft() http.Handler {
 			ctx.ReverseProxy(reactAddr)
 			return
 		} else {
-			ctx.ServeFile(basedir + "/public/" + ctx.RequestPath())
+			path := ctx.RequestPath()
+			if path != "/" && !strings.Contains(path, ".") {
+				path += ".html"
+			}
+
+			ctx.ServeFile(basedir + "/public" + path)
 		}
 	}))
 
@@ -135,22 +159,23 @@ func Nixcraft() http.Handler {
 	mux.HandleFunc("POST /{server}/connect", n.Handle(postConnect))
 	mux.HandleFunc("POST /{server}/cmd", n.Handle(postCmd))
 
+	// WebSocket
+	mux.HandleFunc("GET /ws/{server}/console", n.Handle(wsServerConsole))
+
 	return mux
 }
 
-func trustUser(ctx *nix.Context) (mcUser, bool) {
+func trustUser(ctx *nix.Context) (mcUser, error) {
 	var user mcUser
 	err := ctx.GetCookiePerm(nixcraft_cookie_name, &user)
 	if err != nil {
 		ctx.DeleteCookie(nixcraft_cookie_name)
-		ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
-		return user, false
+		return user, err
 	}
 
 	if user.Passcode != nixcraft_passcode {
 		ctx.DeleteCookie(nixcraft_cookie_name)
-		ctx.Error(http.StatusUnauthorized, "Unauthorized request", "invalid passcode")
-		return user, false
+		return user, errors.New("invalid passcode")
 	}
 
 	ip := server.SplitAddrPort(ctx.R().RemoteAddr)
@@ -169,20 +194,31 @@ func trustUser(ctx *nix.Context) (mcUser, bool) {
 	user.user = value
 
 	if value.conn != nil && value.ip != ip {
-		return user, false
+		ctx.DeleteCookie(nixcraft_cookie_name)
+		return user, existingConnErr{ ip: value.ip }
 	}
 
 	value.ip = ip
 	value.t = time.Now()
-	return user, true
+	return user, nil
+}
+
+func handleTrustUserResult(ctx *nix.Context, err error) {
+	if ipErr, ok := err.(existingConnErr); ok {
+		ctx.Error(http.StatusUnauthorized, fmt.Sprintf("Already connected from %s", ipErr.ip))
+		return
+	}
+	
+	ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
 }
 
 func getAllServers(ctx *nix.Context) {
 	ctx.DisableErrorCapture()
 	ctx.DisableLogging()
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -214,8 +250,9 @@ func getServerState(ctx *nix.Context) {
 
 	srvName := ctx.R().PathValue("server")
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -275,8 +312,9 @@ func postLogin(ctx *nix.Context) {
 func postStart(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -292,8 +330,9 @@ func postStart(ctx *nix.Context) {
 func postStop(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -309,12 +348,13 @@ func postStop(ctx *nix.Context) {
 func postConnect(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	user, ok := trustUser(ctx)
-	if !ok {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
-	err := user.user.ConnectToServer(srvName)
+	err = user.user.ConnectToServer(srvName)
 	if err != nil {
 		ctx.Error(http.StatusBadGateway, fmt.Sprintf("Server %s not found", srvName), err)
 		return
@@ -339,8 +379,9 @@ type logRequest struct {
 func postCmd(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
-	_, ok := trustUser(ctx)
-	if !ok {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
 		return
 	}
 
@@ -353,7 +394,7 @@ func postCmd(ctx *nix.Context) {
 	}
 
 	var cmdReq logRequest
-	err := ctx.ReadJSON(&cmdReq)
+	err = ctx.ReadJSON(&cmdReq)
 	if err != nil {
 		ctx.Error(http.StatusBadRequest, err.Error())
 		return
@@ -422,4 +463,78 @@ func postCmd(ctx *nix.Context) {
 		ctx.Error(http.StatusBadRequest, "Unknown command")
 		return
 	}
+}
+
+func wsServerConsole(ctx *nix.Context) {
+	user, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
+	}
+
+	srvName := ctx.R().PathValue("server")
+
+	MC.mutex.RLock()
+	srv, ok := MC.servers[srvName]
+	MC.mutex.RUnlock()
+
+	if !ok {
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
+		return
+	}
+
+	if !srv.IsRunning() || srv.log == nil {
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s is not running", srvName))
+		return
+	}
+
+	// Questo permette al client prima di inviare una richiesta http normale e vedere se ci può
+	// essere qualche errore, quindi in caso di richiesta valida allora aprirà la connessione
+	// websocket vera
+	if !ctx.IsWebSocketRequest() {
+		return
+	}
+
+	conn, err := websocket.Accept(ctx, ctx.R(), nil)
+	if err != nil {
+		ctx.Error(http.StatusBadRequest, "Invalid Request", err)
+	}
+	defer conn.CloseNow()
+
+	prevLogsN, ch := srv.log.ListenForLogs(20)
+	defer ch.Unregister()
+
+	prevLogs := srv.log.GetLogs(0, prevLogsN)
+	for _, log := range prevLogs {
+		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
+		if err != nil {
+			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
+			return
+		}
+	}
+
+	go func() {
+		for {
+			_, b, err := conn.Read(ctx.R().Context())
+			if err != nil {
+				ctx.AddInteralMessage(fmt.Sprintf("websocket: read error: %v", err))
+				return
+			}
+
+			cmd := string(b)
+			err = srv.SendInput(cmd)
+			if err != nil {
+				srv.log.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.name, cmd, err)
+			}
+		}
+	}()
+	
+	for log := range ch.Ch() {
+		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
+		if err != nil {
+			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
+			return
+		}
+	}
+	
+	conn.Close(websocket.StatusNormalClosure, "")
 }

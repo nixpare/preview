@@ -42,13 +42,8 @@ type McServer struct {
 var mcPrivatePortOffset = new(atomic.Int32)
 
 func mcServerCmd(f string) (string, []string, int) {
-	port := mc_public_port + mcPrivatePortOffset.Add(1)
+	port := mc_public_port + int(mcPrivatePortOffset.Add(1))
 	return "java", []string{"-Xms4G", "-Xmx8G", "-jar", f, "--port", fmt.Sprint(port), "nogui"}, int(port)
-}
-
-func mcModdedServerCmd(f string) (string, []string, int) {
-	port := mc_public_port + mcPrivatePortOffset.Add(1)
-	return "cmd.exe", []string{"/c", ".\\" + f, "--port", fmt.Sprint(port), "nogui"}, int(port)
 }
 
 func (msm *McServerManager) loadServers() error {
@@ -75,20 +70,6 @@ loop:
 			continue
 		}
 		dir := mc_servers_path + "/" + e.Name()
-
-		child, err := os.Stat(dir + "/run.bat")
-		if err == nil && !child.IsDir() && child.Name() == "run.bat" {
-			execName, args, port := mcModdedServerCmd(child.Name())
-			msm.servers[e.Name()] = &McServer{
-				name: e.Name(),
-				javaExec: javaExec{
-					execName: execName, args: args,
-					wd: dir, port: port,
-				},
-				msm: msm,
-			}
-			continue
-		}
 
 		childs, _ := os.ReadDir(dir)
 		for _, child := range childs {
@@ -140,6 +121,8 @@ func (msm *McServerManager) Start(name string) error {
 	return srv.Start()
 }
 
+func noTrimFunc (s string) string { return s }
+
 func (srv *McServer) Start() error {
 	if srv.IsRunning() {
 		return fmt.Errorf("server %s already running", srv.name)
@@ -152,11 +135,34 @@ func (srv *McServer) Start() error {
 	}
 
 	srv.log = logger.NewLogger(nil)
-	srv.userLog = srv.log.Clone(nil, true, "user")
-	outLog := srv.log.Clone(nil, true, "stdout")
-	errLog := srv.log.Clone(nil, true, "stderr")
+	srv.log.TrimFunc = noTrimFunc
 
-	err = srv.process.Start(nil, outLog.FixedLogger(logger.LOG_LEVEL_INFO), errLog.FixedLogger(logger.LOG_LEVEL_ERROR))
+	srv.userLog = srv.log.Clone(nil, true, "user")
+	srv.userLog.TrimFunc = noTrimFunc
+
+	outLog := srv.log.Clone(nil, true, "stdout")
+	outLog.TrimFunc = noTrimFunc
+	outLogWriter := outLog.FixedLogger(logger.LOG_LEVEL_INFO)
+
+	errLog := srv.log.Clone(nil, true, "stderr")
+	errLog.TrimFunc = noTrimFunc
+	errLogWriter := errLog.FixedLogger(logger.LOG_LEVEL_ERROR)
+
+	stdoutCh := srv.process.StdoutListener(20)
+	stderrCh := srv.process.StderrListener(20)
+
+	go func() {
+		for line := range stdoutCh {
+			outLogWriter.Write(append(line, '\n'))
+		}
+	}()
+	go func() {
+		for line := range stderrCh {
+			errLogWriter.Write(append(line, '\n'))
+		}
+	}()
+
+	err = srv.process.Start(nil, nil, nil)
 	if err != nil {
 		srv.msm.Logger.Printf(
 			logger.LOG_LEVEL_ERROR,
@@ -170,8 +176,6 @@ func (srv *McServer) Start() error {
 	)
 
 	go func() {
-		defer func() { srv.process = nil }()
-
 		exitStatus := srv.process.Wait()
 		if err := exitStatus.Error(); err != nil {
 			srv.msm.Logger.Printf(
@@ -263,7 +267,7 @@ func (srv *McServer) SendInput(payload string) error {
 }
 
 func (mc *McServer) IsRunning() bool {
-	return mc.process != nil
+	return mc.process != nil && mc.process.IsRunning()
 }
 
 func (srv *McServer) Connect(sc *commands.ServerConn) error {
@@ -312,6 +316,7 @@ func (srv *McServer) Connect(sc *commands.ServerConn) error {
 
 		srv.process.SendText(in.Message)
 	}
+
 	return nil
 }
 
