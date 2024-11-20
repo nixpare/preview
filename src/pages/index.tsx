@@ -7,6 +7,7 @@ import { ServerListProps } from './CraftServerList';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { createRoot } from 'react-dom/client';
+import UserContext from '../contexts/userContext';
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
@@ -28,6 +29,11 @@ function CraftHome() {
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
 	const [currentServer, setCurrentServer] = useState("" as string);
+
+	let currentUser = localStorage.getItem('username');
+
+	if (currentUser == null) currentUser = "";
+  	const [user, setUser] = useState({user: currentUser});
 
 	const showMessage = (message: string): void => {
 		setOpenSnackbar(true);
@@ -56,6 +62,7 @@ function CraftHome() {
 
 	const logout = async () => {
         localStorage.removeItem('username');
+		setUser({user: ""});
         await axios.get('/logout');
         window.location.href = '/login';
 	}
@@ -65,18 +72,20 @@ function CraftHome() {
 
 	return (
 		<>
-			<Navbar showLogoutButton onLogout={logout}/>
-			<Page {...pageProps} />
+			<UserContext.Provider value={user}>
+				<Navbar showLogoutButton onLogout={logout}/>
+				<Page {...pageProps} />
 
-			<Footer />
+				<Footer />
 
-			<Snackbar
-				open={openSnackbar}
-				message={errorMessage}
-				autoHideDuration={6000}
-				onClose={() => { setOpenSnackbar(false) }}
-				onClick={() => { setOpenSnackbar(false) }}
-			/>
+				<Snackbar
+					open={openSnackbar}
+					message={errorMessage}
+					autoHideDuration={6000}
+					onClose={() => { setOpenSnackbar(false) }}
+					onClick={() => { setOpenSnackbar(false) }}
+				/>
+			</UserContext.Provider>
 		</>
 	)
 }
