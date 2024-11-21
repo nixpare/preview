@@ -289,19 +289,6 @@ func postConnect(ctx *nix.Context) {
 	ctx.String("Done!")
 }
 
-type logRequestCmd string
-
-const (
-	getLogsCmd       logRequestCmd = "get-logs"
-	sendCmd          logRequestCmd = "send"
-	sendBroadcastCmd logRequestCmd = "send-broadcast"
-)
-
-type logRequest struct {
-	Cmd  logRequestCmd
-	Args []string
-}
-
 func postCmd(ctx *nix.Context) {
 	srvName := ctx.R().PathValue("server")
 
@@ -325,6 +312,10 @@ func postCmd(ctx *nix.Context) {
 	}
 
 	cmd, err := ctx.BodyString()
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	srv.userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent command: <%s>", user.Username, cmd)
 	ctx.AddInteralMessage(fmt.Sprintf("User %s sent command: <%s>", user.Username, cmd))
@@ -359,6 +350,10 @@ func postBroadcast(ctx *nix.Context) {
 	}
 
 	message, err := ctx.BodyString()
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	srv.userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent broadcast message: <%s>", user.Username, message)
 	ctx.AddInteralMessage(fmt.Sprintf("User %s sent broadcast message: <%s>", user.Username, message))

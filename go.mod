@@ -7,7 +7,7 @@ require (
 	github.com/nixpare/broadcaster v1.2.1
 	github.com/nixpare/logger/v3 v3.0.4
 	github.com/nixpare/nix v0.1.0
-	github.com/nixpare/process v1.6.7
+	github.com/nixpare/process v1.7.0
 	github.com/nixpare/server/v3 v3.0.0-beta.5
 )
 

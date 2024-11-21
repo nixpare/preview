@@ -164,7 +164,7 @@ func (srv *McServer) Start() error {
 	if err != nil {
 		return err
 	}
-	srv.process.SysProcAttr.Setpgid = true
+	srv.process.InheritConsole(false)
 
 	srv.log = logger.NewLogger(nil)
 	srv.log.TrimFunc = noTrimFunc
