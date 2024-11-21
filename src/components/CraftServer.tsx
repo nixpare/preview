@@ -1,18 +1,20 @@
+import '../assets/css/CraftServer.css'
+
 import { Button } from "@mui/material";
 import axios, { AxiosError } from "axios";
-import ServerLogs from '../components/ServerLogs';
-import SendCommand from "../components/SendCommand";
+import ServerLogs from './ServerLogs';
+import SendCommand from "./SendCommand";
 import UserContext from "../contexts/userContext";
 import { useContext } from "react";
 import { Server } from "../models/Server";
 
 export type ServerProps = {
-    backToList: () => void;
+    closeServer: () => void;
     serverName: string;
-    onMessage: (message: string) => void;
+    showMessage: (message: string) => void;
 }
 
-export default function CraftServer({backToList, serverName, onMessage}: ServerProps) {
+export default function CraftServer({ closeServer, serverName, showMessage }: ServerProps) {
     const { user, servers } = useContext(UserContext)
     if (!user || !servers)
         return undefined
@@ -20,14 +22,14 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
     const server = servers.servers[serverName] as Server | undefined
     if (!server)
         return undefined
-    
+
     const startServer = async () => {
         const response = await axios.post(`/${serverName}/start`);
 
         if (response.status === 200) {
-            onMessage('Server started');
+            showMessage('Server started');
         } else {
-            onMessage('Server failed to start');
+            showMessage('Server failed to start');
         }
     }
 
@@ -35,31 +37,33 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
         const response = await axios.post(`/${serverName}/stop`);
 
         if (response.status === 200) {
-            onMessage('Server stopped');
+            showMessage('Server stopped');
         } else {
-            onMessage('Server failed to stop');
+            showMessage('Server failed to stop');
         }
     }
 
     const connectToServer = async () => {
         const response = await axios.post(`/${serverName}/connect`)
-            .catch((err: AxiosError)=> {
-                onMessage(err.message);
-        });
+            .catch((err: AxiosError) => {
+                showMessage(err.message);
+            });
 
         if (response == undefined) return;
 
         if (response.status >= 400) {
-            onMessage('Failed to connect to server');
+            showMessage('Failed to connect to server');
         } else {
-            onMessage('Connected to server');
+            showMessage('Connected to server');
         }
     }
 
     return (
-        <>
-            <h1>Server {serverName}</h1>
-            <Button onClick={backToList}>Back</Button>
+        <div className="selected-server">
+            <h1>{serverName}</h1>
+            <button className="close-button" onClick={closeServer}>
+                <i className="fa-solid fa-xmark"></i>
+            </button>
             <p>{server.running ? 'Online' : 'Offline'}</p>
             {server.running && <p>Online Players: {servers.servers[serverName].players?.length ?? 0}</p>}
             <Button onClick={startServer} disabled={server.running}>Start Server</Button>
@@ -71,11 +75,11 @@ export default function CraftServer({backToList, serverName, onMessage}: ServerP
                 </>}
             </div>
             }
-            <ServerLogs serverName={serverName} serverStarted={server.running} onMessage={onMessage} />
+            <ServerLogs serverName={serverName} serverStarted={server.running} onMessage={showMessage} />
             {server.running && <div>
-                <SendCommand cmd="Command" route={`/${serverName}/cmd`} showMessage={onMessage} prefix="/"/>
-                <SendCommand cmd="Broadcast Message" route={`/${serverName}/broadcast`} showMessage={onMessage}/>
+                <SendCommand cmd="Command" route={`/${serverName}/cmd`} showMessage={showMessage} prefix="/" />
+                <SendCommand cmd="Broadcast Message" route={`/${serverName}/broadcast`} showMessage={showMessage} />
             </div>}
-        </>
+        </div>
     )
 }

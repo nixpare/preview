@@ -1,9 +1,8 @@
 import { StrictMode, useEffect, useState } from 'react'
-import CraftServerList from './CraftServerList';
-import CraftServer, { ServerProps } from './CraftServer';
+import CraftServerList from '../components/CraftServerList';
+import CraftServer from '../components/CraftServer';
 import Footer from '../components/Footer';
 import { Snackbar } from '@mui/material';
-import { ServerListProps } from './CraftServerList';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { createRoot } from 'react-dom/client';
@@ -17,61 +16,17 @@ createRoot(document.getElementById('root')!).render(
 	</StrictMode>
 )
 
-type PageName = 'Server' | 'ServerList';
-type Pages = {
-	[key in PageName]: JSX.ElementType;
-}
-type PagesProps = {
-	'ServerList': ServerListProps,
-	'Server': ServerProps
-}
-
 let serversWS = false as WebSocket | boolean
 let userWS = false as WebSocket | boolean
 
 function CraftHome() {
-	const [pageName, setPageName] = useState('ServerList' as PageName);
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
-	const [currentServer, setCurrentServer] = useState("" as string);
-
-	const showMessage = (message: string): void => {
-		setOpenSnackbar(true);
-		setErrorMessage(message);
-	};
-
-	const showDetails = (serverName: string): void => {
-		setPageName('Server');
-		setCurrentServer(serverName);
-	}
-
-	const backToList = (): void => {
-		setPageName('ServerList');
-		setCurrentServer("");
-	}
-
-	const pages: Pages = {
-		'ServerList': CraftServerList,
-		'Server': CraftServer
-	};
-
-	const pagesProps: PagesProps = {
-		'ServerList': { onShowDetails: showDetails },
-		'Server': { backToList, serverName: currentServer, onMessage: showMessage }
-	};
-
-	const logout = async () => {
-        await axios.get('/logout');
-        window.location.href = '/login';
-	}
-
-	const Page = pages[pageName];
-	const pageProps = pagesProps[pageName];
 
 	const [servers, setServers] = useState(undefined as ServersInfo | undefined)
 	useEffect(() => {
 		if (serversWS) return
-		
+
 		serversWS = true
 		startServersInfoWS(setServers, showMessage)
 	})
@@ -84,13 +39,47 @@ function CraftHome() {
 		startUserInfoWS(setUser, showMessage)
 	}, [userWS])
 
+	const [currentServer, setCurrentServer] = useState(localStorage.getItem('selectedServer'));
+	useEffect(() => {
+		if (currentServer == null) {
+			localStorage.removeItem('selectedServer')
+		} else {
+			localStorage.setItem('selectedServer', currentServer)
+		}
+	}, [currentServer])
+
+	const showMessage = (message: string): void => {
+		setOpenSnackbar(true);
+		setErrorMessage(message);
+	};
+
+	const logout = async () => {
+		await axios.get('/logout');
+		window.location.href = '/login';
+	}
+
+	const closeServer = () => {
+		setCurrentServer(null)
+	}
+
 	return (
 		<>
 			<UserContext.Provider value={{ user: user, servers: servers }}>
-				<Navbar showLogoutButton onLogout={logout}/>
-				<Page {...pageProps} />
+				<Navbar showLogoutButton onLogout={logout} />
 
-				<Footer />
+				{user != undefined && <h2>Welcome, {user.name}</h2>}
+
+				<div className="d-flex gap-3">
+					<CraftServerList setCurrentServer={setCurrentServer} />
+					{currentServer != undefined && servers?.servers[currentServer] != undefined ? <>
+						<CraftServer
+							closeServer={closeServer}
+							serverName={currentServer}
+							showMessage={showMessage}
+						/>
+					</> : undefined}
+				</div>
+
 
 				<Snackbar
 					open={openSnackbar}
@@ -99,6 +88,8 @@ function CraftHome() {
 					onClose={() => { setOpenSnackbar(false) }}
 					onClick={() => { setOpenSnackbar(false) }}
 				/>
+
+				<Footer />
 			</UserContext.Provider>
 		</>
 	)

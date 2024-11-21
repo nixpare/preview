@@ -1,0 +1,46 @@
+.servers-list {
+	list-style: none;
+	width: fit-content;
+	margin: 0;
+	padding: 0;
+}
+
+.server-entry {
+	display: flex;
+	justify-content: space-between;
+	gap: 2em;
+	background-color: rgba(0, 0, 0, .4);
+	border-radius: .4em;
+	padding: 1.4em 2em;
+	margin: 1em 0;
+	text-align: left;
+}
+
+.server-entry .server-type {
+	font-size: .8em;
+	color: #aaa;
+}
+
+.server-entry .server-state {
+	display: flex;
+	align-items: center;
+	gap: .5em;
+}
+
+.server-entry .server-state .server-state-dot {
+	width: .6em;
+	height: .6em;
+	background-color: red;
+	border-radius: 50%;
+}
+
+.server-entry .server-state.online .server-state-dot {
+	background-color: green;
+}
+
+.server-entry .server-state .online-players {
+	margin-left: 1em;
+	display: flex;
+	gap: .6em;
+	align-items: center;
+}
