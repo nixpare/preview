@@ -1,0 +1,32 @@
+nav {
+	position: sticky;
+	top: 0;
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+	padding: 1em 3em;
+	background-color: rgba(var(--background-color), .5);
+	backdrop-filter: blur(10px);
+	z-index: 100;
+}
+
+nav .logo {
+	display: flex;
+	align-items: center;
+	gap: 1em;
+	color: white;
+}
+
+nav .logo h1 {
+	font-size: 2em;
+}
+
+nav .logo .logo-img {
+	width: 3em;
+	height: 3em;
+}
+
+nav .logout-button {
+	height: fit-content;
+	border-radius: .6em;
+}

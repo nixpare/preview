@@ -1,0 +1,13 @@
+.welcome {
+	margin-bottom: 1em;
+}
+
+.welcome > span {
+	color: rgb(var(--primary-color-light));
+}
+
+.servers {
+	display: flex;
+	gap: 2em;
+	width: fit-content;
+}

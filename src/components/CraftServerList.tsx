@@ -5,17 +5,18 @@ import { useContext } from "react";
 import UserContext from "../contexts/userContext";
 
 export type ServerListProps = {
+  aside: boolean
   setCurrentServer: (serverName: string) => void
 }
 
-export default function CraftServerList({ setCurrentServer }: ServerListProps) {
+export default function CraftServerList({ aside, setCurrentServer }: ServerListProps) {
   const { user, servers } = useContext(UserContext)
 
   if (!user || !servers)
     return undefined
 
   return (
-    <ul className="servers-list">
+    <ul className={`servers-list ${aside ? 'aside' : ''}`}>
       {servers.servers && Object.values(servers.servers).map(server => {
         const handleClick = () => {
           setCurrentServer(server.name);

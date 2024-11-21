@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -499,10 +500,18 @@ func wsServerConsole(ctx *nix.Context) {
 		}
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+	exitC := make(chan struct{})
+	defer close(exitC)
+
 	go func() {
+		defer wg.Done()
+
 		for {
 			_, b, err := conn.Read(ctx.R().Context())
 			if err != nil {
+				exitC <- struct{}{}
 				ctx.AddInteralMessage(fmt.Sprintf("websocket: read error: %v", err))
 				return
 			}
@@ -515,13 +524,26 @@ func wsServerConsole(ctx *nix.Context) {
 		}
 	}()
 
-	for log := range ch.Ch() {
-		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
-		if err != nil {
-			ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
-			return
-		}
-	}
+	go func() {
+		defer wg.Done()
 
+		logCh := ch.Ch()
+	loop:
+		for {
+			select {
+			case log := <- logCh:
+				err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
+				if err != nil {
+					conn.CloseNow()
+					ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
+					return
+				}
+			case <- exitC:
+				break loop
+			}
+		}
+	}()
+
+	wg.Wait()
 	conn.Close(websocket.StatusNormalClosure, "")
 }

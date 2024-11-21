@@ -1,9 +1,12 @@
+import '../assets/css/login.css'
+
 import axios, { AxiosError } from 'axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { Snackbar, Stack } from '@mui/material';
+import { Snackbar } from '@mui/material';
 import { StrictMode, useState } from 'react';
 import Navbar from '../components/Navbar';
 import { createRoot } from 'react-dom/client';
+import Footer from '../components/Footer';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -43,16 +46,23 @@ function CraftLogin() {
 
   return (
     <>
-      <Navbar showLogoutButton={false} onLogout={() => {}}/>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={2}>
-          <input type="text" {...register("username")} className='form-control' placeholder='Username' autoComplete='username' />
-          <input type="password" {...register("password")} className='form-control' placeholder='Password' autoComplete='current-password' />
-          <button type="submit" className="btn btn-primary shadow d-block w-100">Login</button>
-        </Stack>
+      <div className="page-wrapper">
+        <div>
+          <Navbar showLogoutButton={false} onLogout={() => { }} />
+          <div className="page">
+            <h1>Login</h1>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <input type="text" {...register("username")} className='form-control' placeholder='Username' autoComplete='username' />
+              <input type="password" {...register("password")} className='form-control' placeholder='Password' autoComplete='current-password' />
+              <button type="submit" className="primary-button">Login</button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <Footer />
+        </div>
+      </div>
 
-      </form>
       <Snackbar
         open={openSnackbar}
         message={errorMessage}

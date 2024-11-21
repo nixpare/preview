@@ -34,21 +34,24 @@ let ws = false as WebSocket | boolean
 export default function ServerLogs({ serverName, serverStarted, onMessage }: ServerLogsProps) {
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
 
+    const cleanup = () => {
+        //@ts-ignore
+        ws && ws.close && ws.close()
+    }
+
     useEffect(() => {
-        if (ws || !serverStarted) return
+        if (ws || !serverStarted)
+            return cleanup
 
         ws = true
         queryServerLogs(serverName, onMessage, updateLogs);
 
-        return () => {
-            //@ts-ignore
-            ws && ws.close && ws.close()
-        }
+        return cleanup
     }, [serverStarted]);
     
     return (
         <div className="server-logs">
-            <table className="table table-dark table-borderless align-middle text-center text-wrap logs-table" style={{whiteSpace: 'pre-wrap'}}>
+            <table className="logs-table" style={{whiteSpace: 'pre-wrap'}}>
                 <thead>
                     <tr>
                         <th scope="col">TIME</th>

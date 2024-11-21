@@ -1,3 +1,5 @@
+import '../assets/css/index.css'
+
 import { StrictMode, useEffect, useState } from 'react'
 import CraftServerList from '../components/CraftServerList';
 import CraftServer from '../components/CraftServer';
@@ -62,36 +64,40 @@ function CraftHome() {
 		setCurrentServer(null)
 	}
 
+	const serverOpened = currentServer != undefined && servers?.servers[currentServer] != undefined
+
 	return (
-		<>
-			<UserContext.Provider value={{ user: user, servers: servers }}>
-				<Navbar showLogoutButton onLogout={logout} />
-
-				{user != undefined && <h2>Welcome, {user.name}</h2>}
-
-				<div className="d-flex gap-3">
-					<CraftServerList setCurrentServer={setCurrentServer} />
-					{currentServer != undefined && servers?.servers[currentServer] != undefined ? <>
-						<CraftServer
-							closeServer={closeServer}
-							serverName={currentServer}
-							showMessage={showMessage}
-						/>
-					</> : undefined}
+		<UserContext.Provider value={{ user: user, servers: servers }}>
+			<div className="page-wrapper">
+				<div>
+					<Navbar showLogoutButton onLogout={logout} />
+					<div className="page">
+						{user != undefined && <h2 className="welcome">Welcome, <span>{user.name}</span></h2>}
+						<div className="servers">
+							<CraftServerList aside={serverOpened} setCurrentServer={setCurrentServer} />
+							{serverOpened ? <>
+								<CraftServer
+									closeServer={closeServer}
+									serverName={currentServer}
+									showMessage={showMessage}
+								/>
+							</> : undefined}
+						</div>
+					</div>
 				</div>
+				<div>
+					<Footer />
+				</div>
+			</div>
 
-
-				<Snackbar
-					open={openSnackbar}
-					message={errorMessage}
-					autoHideDuration={6000}
-					onClose={() => { setOpenSnackbar(false) }}
-					onClick={() => { setOpenSnackbar(false) }}
-				/>
-
-				<Footer />
-			</UserContext.Provider>
-		</>
+			<Snackbar
+				open={openSnackbar}
+				message={errorMessage}
+				autoHideDuration={6000}
+				onClose={() => { setOpenSnackbar(false) }}
+				onClick={() => { setOpenSnackbar(false) }}
+			/>
+		</UserContext.Provider>
 	)
 }
 

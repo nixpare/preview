@@ -12,5 +12,12 @@
 	top: .2em;
 	right: .2em;
 	background-color: transparent;
-	padding: 0 .4em;
+	border: 0;
+	padding: 0 .2em;
+}
+.selected-server .close-button:hover {
+	color: #ccc;
+}
+.selected-server .close-button:active {
+	color: rgb(var(--primary-color-light));
 }
