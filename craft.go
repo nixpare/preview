@@ -89,7 +89,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 	}
 
 	for _, srv := range commandServers {
-		srv.Commands["mc-preview"] = mcCommand(MC)
+		srv.Commands["mc"] = mcCommand(MC)
 	}
 
 	return nil
