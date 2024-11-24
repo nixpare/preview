@@ -1,4 +1,4 @@
-import '../assets/css/CraftServer.css'
+import './CraftServer.css'
 
 import { Button } from "@mui/material";
 import axios, { AxiosError } from "axios";

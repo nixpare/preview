@@ -1,4 +1,4 @@
-import '../assets/css/SendCommand.css'
+import './SendCommand.css'
 
 import { Button } from "@mui/material"
 import axios from "axios";

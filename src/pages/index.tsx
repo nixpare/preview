@@ -1,4 +1,4 @@
-import '../assets/css/index.css'
+import './index.css'
 
 import { StrictMode, useEffect, useState } from 'react'
 import CraftServerList from '../components/CraftServerList';

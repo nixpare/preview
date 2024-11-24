@@ -1,4 +1,4 @@
-import '../assets/css/ServerLogs.css'
+import './ServerLogs.css'
 
 import { Updater, useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent } from "react";

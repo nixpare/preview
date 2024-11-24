@@ -434,7 +434,6 @@ func wsUserInfo(ctx *nix.Context) {
 	go func() {
 		for range updates.Ch() {
 			data, err := json.Marshal(user.user)
-			ctx.Logger().Debug(string(data), err)
 			if err != nil {
 				conn.Close(websocket.StatusInternalError, err.Error())
 				return

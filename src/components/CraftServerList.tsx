@@ -1,4 +1,4 @@
-import '../assets/css/CraftServerList.css'
+import './CraftServerList.css'
 
 import { useContext } from "react";
 import UserContext from "../contexts/userContext";

@@ -1,4 +1,4 @@
-import '../assets/css/login.css'
+import './login.css'
 
 import axios, { AxiosError } from 'axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
