@@ -1,8 +1,8 @@
 import '../assets/css/CraftServerList.css'
 
-import { Button } from "@mui/material";
 import { useContext } from "react";
 import UserContext from "../contexts/userContext";
+import { ServerOnlineState } from './CraftServer';
 
 export type ServerListProps = {
   aside: boolean
@@ -18,12 +18,12 @@ export default function CraftServerList({ aside, setCurrentServer }: ServerListP
   return (
     <ul className={`servers-list ${aside ? 'aside' : ''}`}>
       {servers.servers && Object.values(servers.servers).map(server => {
-        const handleClick = () => {
+        const showServer = () => {
           setCurrentServer(server.name);
         }
 
         return (
-          <li key={server.name} className="server-entry">
+          <li key={server.name} className="server-entry" onClick={showServer}>
             <div>
               <div className="server-name">
                 {server.name}
@@ -31,16 +31,9 @@ export default function CraftServerList({ aside, setCurrentServer }: ServerListP
               <div className="server-type">
                 Vanilla
               </div>
-              <div className={`server-state ${server.running ? 'online' : ''}`}>
-                <i className="server-state-dot"></i>
-                <div>{server.running ? 'Online' : 'Offline'}</div>
-                {server.running ? <div className="online-players">
-                  <i className="fa-solid fa-users"></i>
-                  {server.players?.length ?? 0}
-                </div> : undefined}
-              </div>
+              <ServerOnlineState server={server} />
             </div>
-            <Button onClick={handleClick}>Show</Button>
+            <i className="fa-solid fa-chevron-right"></i>
           </li>
         )
       })}

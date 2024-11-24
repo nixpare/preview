@@ -64,22 +64,43 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
             <button className="close-button" onClick={closeServer}>
                 <i className="fa-solid fa-xmark"></i>
             </button>
-            <p>{server.running ? 'Online' : 'Offline'}</p>
-            {server.running && <p>Online Players: {servers.servers[serverName].players?.length ?? 0}</p>}
-            <Button onClick={startServer} disabled={server.running}>Start Server</Button>
-            <Button onClick={stopServer} disabled={!server.running}>Stop Server</Button>
-            {server.running && <div>
-                <Button onClick={connectToServer}>Connect to this Server</Button>
-                {user.server == serverName && <>
-                    <i className="fa-solid fa-circle-check"></i>
-                </>}
+            <ServerOnlineState server={server} />
+            <div>
+                <Button onClick={startServer} disabled={server.running}>Start Server</Button>
+                <Button onClick={stopServer} disabled={!server.running}>Stop Server</Button>
             </div>
-            }
+            {server.running && <div>
+                {user.server != serverName ? <>
+                    <Button onClick={connectToServer}>Connect to this Server</Button>
+                </> : <>
+                    Connected
+                    <i className="fa-solid fa-circle-check connected-check"></i>
+                </>}
+            </div>}
             <ServerLogs serverName={serverName} serverStarted={server.running} onMessage={showMessage} />
             {server.running && <div>
                 <SendCommand cmd="Command" route={`/${serverName}/cmd`} showMessage={showMessage} prefix="/" />
                 <SendCommand cmd="Broadcast Message" route={`/${serverName}/broadcast`} showMessage={showMessage} />
             </div>}
+        </div>
+    )
+}
+
+export type ServerOnlineStateProps = {
+    server: Server
+}
+
+export function ServerOnlineState({ server }: ServerOnlineStateProps) {
+    return (
+        <div className={`server-state ${server.running ? 'online' : ''}`}>
+            <i className="server-state-dot"></i>
+            <div className="server-state-descr">
+                {server.running ? 'Online' : 'Offline'}
+            </div>
+            {server.running ? <div className="online-players">
+                <i className="fa-solid fa-users"></i>
+                {server.players?.length ?? 0}
+            </div> : undefined}
         </div>
     )
 }

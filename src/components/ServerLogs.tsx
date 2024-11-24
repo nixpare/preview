@@ -40,14 +40,17 @@ export default function ServerLogs({ serverName, serverStarted, onMessage }: Ser
     }
 
     useEffect(() => {
-        if (ws || !serverStarted)
+        cleanup()
+
+        //@ts-ignore
+        if (!serverStarted || (ws && !ws.close))
             return cleanup
 
         ws = true
         queryServerLogs(serverName, onMessage, updateLogs);
 
         return cleanup
-    }, [serverStarted]);
+    }, [serverName, serverStarted]);
     
     return (
         <div className="server-logs">
@@ -112,7 +115,7 @@ async function queryServerLogs(
         });
 
     if (response == undefined)
-        return undefined;
+        return
 
     ws = new WebSocket(url)
     ws.onopen = () => {

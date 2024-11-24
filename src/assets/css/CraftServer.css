@@ -4,6 +4,9 @@
 	padding: 1.4em 2em;
 	margin: 1em 0;
 	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 .selected-server .close-button {
@@ -20,4 +23,33 @@
 }
 .selected-server .close-button:active {
 	color: rgb(var(--primary-color-light));
+}
+
+.selected-server .connected-check {
+	color: green;
+	margin-left: .6em;
+}
+
+.server-state {
+	display: flex;
+	align-items: center;
+	gap: .5em;
+}
+
+.server-state .server-state-dot {
+	width: .6em;
+	height: .6em;
+	background-color: red;
+	border-radius: 50%;
+}
+
+.server-state.online .server-state-dot {
+	background-color: green;
+}
+
+.server-state .online-players {
+	margin-left: 1em;
+	display: flex;
+	gap: .6em;
+	align-items: center;
 }

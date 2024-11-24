@@ -18,11 +18,18 @@
 .server-entry {
 	display: flex;
 	justify-content: space-between;
+	align-items: center;
 	gap: 2em;
 	background-color: rgba(0, 0, 0, .4);
 	border-radius: .4em;
 	padding: 1.4em 2em;
 	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 0 0 #0000;
+	transition: box-shadow .3s;
+}
+.server-entry:hover {
+	box-shadow: 0 0 1em rgba(var(--primary-color-light), .5);
 }
 
 .server-entry .server-type {
@@ -30,26 +37,10 @@
 	color: #aaa;
 }
 
-.server-entry .server-state {
-	display: flex;
-	align-items: center;
-	gap: .5em;
+.servers-list:not(.aside) .server-entry > i {
+	opacity: 0;
 }
 
-.server-entry .server-state .server-state-dot {
-	width: .6em;
-	height: .6em;
-	background-color: red;
-	border-radius: 50%;
-}
-
-.server-entry .server-state.online .server-state-dot {
-	background-color: green;
-}
-
-.server-entry .server-state .online-players {
-	margin-left: 1em;
-	display: flex;
-	gap: .6em;
-	align-items: center;
+.servers-list.aside .server-entry .server-state-descr {
+	display: none;
 }
