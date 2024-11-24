@@ -7,6 +7,8 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	max-width: -webkit-fill-available;
+	overflow: auto;
 }
 
 .selected-server .close-button {
@@ -25,31 +27,40 @@
 	color: rgb(var(--primary-color-light));
 }
 
-.selected-server .connected-check {
-	color: green;
-	margin-left: .6em;
-}
-
-.server-state {
+.selected-server .sections-selector {
 	display: flex;
-	align-items: center;
-	gap: .5em;
+	width: 100%;
+	background-color: rgba(var(--primary-color-dark), .6);
+	margin: 1em 0;
+	border-top-left-radius: .4em;
+	border-top-right-radius: .4em;
 }
 
-.server-state .server-state-dot {
-	width: .6em;
-	height: .6em;
-	background-color: red;
-	border-radius: 50%;
+.selected-server .sections-selector > * {
+	width: 50%;
+	padding: .2em;
+	box-shadow: 0 0 0 #0000;
+	transition: box-shadow .3s;
 }
 
-.server-state.online .server-state-dot {
-	background-color: green;
+.selected-server .sections-selector>*.selected {
+	background-color: rgba(var(--primary-color), .4);
+	border-top-left-radius: .4em;
+	border-top-right-radius: .4em;
 }
 
-.server-state .online-players {
-	margin-left: 1em;
-	display: flex;
-	gap: .6em;
-	align-items: center;
+.selected-server .sections-selector>:not(.selected) {
+	cursor: pointer;
+}
+.selected-server .sections-selector>:not(.selected):hover {
+	box-shadow: 0 0 1em rgba(var(--primary-color-light), .4);
+}
+
+.selected-server .sections {
+	max-width: 100%;
+	overflow: auto;
+}
+
+.selected-server .sections > * {
+	height: 100%;
 }

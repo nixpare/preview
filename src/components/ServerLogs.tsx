@@ -3,12 +3,8 @@ import './ServerLogs.css'
 import { Updater, useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent } from "react";
 import axios from 'axios';
-
-type ServerLogsProps = {
-    serverName: string;
-    serverStarted: boolean;
-    onMessage: (message: string) => void;
-}
+import SendCommand from './SendCommand';
+import { Server } from '../models/Server';
 
 type ServerLog = {
     id: string
@@ -29,9 +25,18 @@ type ParsedLog = {
     tags: string[]
 }
 
+type ServerLogsProps = {
+    server: Server;
+    show: boolean;
+    showMessage: (message: string) => void;
+}
+
 let ws = false as WebSocket | boolean
 
-export default function ServerLogs({ serverName, serverStarted, onMessage }: ServerLogsProps) {
+export default function ServerLogs({ server, show, showMessage }: ServerLogsProps) {
+    if (!show)
+        return
+
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
 
     const cleanup = () => {
@@ -40,35 +45,44 @@ export default function ServerLogs({ serverName, serverStarted, onMessage }: Ser
     }
 
     useEffect(() => {
+        updateLogs(logs => {
+            logs.length = 0
+        })
+    }, [server.name])
+
+    useEffect(() => {
         cleanup()
 
         //@ts-ignore
-        if (!serverStarted || (ws && !ws.close))
+        if (!server.running || (ws && !ws.close))
             return cleanup
 
         ws = true
-        queryServerLogs(serverName, onMessage, updateLogs);
+        queryServerLogs(server.name, showMessage, updateLogs);
 
         return cleanup
-    }, [serverName, serverStarted]);
+    }, [server.name, server.running]);
     
     return (
-        <div className="server-logs">
-            <table className="logs-table" style={{whiteSpace: 'pre-wrap'}}>
-                <thead>
-                    <tr>
-                        <th scope="col">TIME</th>
-                        <th scope="col">FROM</th>
-                        <th scope="col">LEVEL</th>
-                        <th scope="col">LOG</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {logs.map(log => (
-                        <Log key={log.id} log={log} />
-                    ))}
-                </tbody>
-            </table>
+        <div>
+            <SendCommand cmd="Command" route={`/${server.name}/cmd`} showMessage={showMessage} prefix="/" />
+            <div className="server-logs">
+                <table className="logs-table" style={{whiteSpace: 'pre-wrap'}}>
+                    <thead>
+                        <tr>
+                            <th scope="col">TIME</th>
+                            <th scope="col">FROM</th>
+                            <th scope="col">LEVEL</th>
+                            <th scope="col">LOG</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {logs.map(log => (
+                            <Log key={log.id} log={log} />
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 }
@@ -90,13 +104,15 @@ function Log({ log }: { log: ParsedLog }) {
             <div className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
                 <div className="message">
                     {log.message}
+                    <div className="tags">
+                        Tags:
+                        {log.tags.map(tag => (
+                            <p key={tag}>{tag}</p>
+                        ))}
+                    </div>
                 </div>
-                <i className="fa-solid fa-chevron-right"></i>
-                <div className="tags">
-                    Tags:
-                    {log.tags.map(tag => (
-                        <p key={tag}>{tag}</p>
-                    ))}
+                <div className="expand">
+                    <i className="fa-solid fa-chevron-right"></i>
                 </div>
             </div>
         </td>

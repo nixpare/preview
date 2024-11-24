@@ -2,7 +2,7 @@ import './CraftServerList.css'
 
 import { useContext } from "react";
 import UserContext from "../contexts/userContext";
-import { ServerOnlineState } from './CraftServer';
+import { ServerOnlineState } from './ServerInfo';
 
 export type ServerListProps = {
   aside: boolean

@@ -208,11 +208,19 @@ func handleTrustUserResult(ctx *nix.Context, err error) {
 	ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
 }
 
+//
+// GET
+//
+
 func getLogout(ctx *nix.Context) {
 	ctx.DisableLogging()
 	ctx.DisableErrorCapture()
 	ctx.DeleteCookie(nixcraft_cookie_name)
 }
+
+//
+// POST
+//
 
 func postLogin(ctx *nix.Context) {
 	var user mcUser
@@ -367,6 +375,10 @@ func postBroadcast(ctx *nix.Context) {
 	}
 }
 
+//
+// WebSocket
+//
+
 func wsServersInfo(ctx *nix.Context) {
 	ctx.DisableErrorCapture()
 
@@ -510,8 +522,8 @@ func wsServerConsole(ctx *nix.Context) {
 		for {
 			_, b, err := conn.Read(ctx.R().Context())
 			if err != nil {
+				// Not handling error, for 99% of the cases, this is fine
 				exitC <- struct{}{}
-				ctx.AddInteralMessage(fmt.Sprintf("websocket: read error: %v", err))
 				return
 			}
 

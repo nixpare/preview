@@ -1,0 +1,28 @@
+.server-info .connected-check {
+	color: green;
+	margin-left: .6em;
+}
+
+.server-state {
+	display: flex;
+	align-items: center;
+	gap: .5em;
+}
+
+.server-state .server-state-dot {
+	width: .6em;
+	height: .6em;
+	background-color: red;
+	border-radius: 50%;
+}
+
+.server-state.online .server-state-dot {
+	background-color: green;
+}
+
+.server-state .online-players {
+	margin-left: 1em;
+	display: flex;
+	gap: .6em;
+	align-items: center;
+}
