@@ -1,7 +1,7 @@
 import './ServerLogs.css'
 
 import { Updater, useImmer } from "use-immer";
-import { useEffect, useState, MouseEvent } from "react";
+import { useEffect, useState, MouseEvent, useRef } from "react";
 import axios from 'axios';
 import SendCommand from './SendCommand';
 import { Server } from '../models/Server';
@@ -18,6 +18,9 @@ let ws = false as WebSocket | boolean
 
 export default function ServerLogs({ serverName, server, show, showMessage }: ServerLogsProps) {
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
+    
+    const serverLogsEl = useRef<HTMLDivElement>(null);
+    const [scrollAtBottom, setScrollAtBottom] = useState(false)
 
     const cleanup = () => {
         wsIsActive(ws) && ws.close()
@@ -41,6 +44,22 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
         return cleanup
     }, [server]);
 
+    useEffect(() => {
+        if (!scrollAtBottom)
+            return
+        
+        serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
+        setScrollAtBottom(true)
+    }, [logs])
+
+    const onLogsScroll = (ev: React.UIEvent<HTMLDivElement>) => {
+        if (ev.currentTarget.scrollTop + ev.currentTarget.clientHeight < ev.currentTarget.scrollHeight) {
+            setScrollAtBottom(false)
+        } else {
+            setScrollAtBottom(true)
+        }
+    }
+
     const send = (cmd: string) => {
         if (!wsIsActive(ws)) {
             showMessage('Could not send command to server')
@@ -53,8 +72,8 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
     return (
         <div style={!show ? { display: 'none'} : undefined}>
             <SendCommand label="Command" sendFunc={send} prefix="/" />
-            <div className="server-logs">
-                <table className="logs-table" style={{whiteSpace: 'pre-wrap'}}>
+            <div className="server-logs" onScroll={onLogsScroll} ref={serverLogsEl}>
+                <table>
                     <thead>
                         <tr>
                             <th scope="col">TIME</th>

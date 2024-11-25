@@ -7,7 +7,8 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	max-width: -webkit-fill-available;
+	width: 100%;
+	max-width: 100%;
 	overflow: auto;
 }
 
@@ -29,7 +30,8 @@
 
 .selected-server .sections-selector {
 	display: flex;
-	width: 100%;
+	width: 60%;
+	max-width: 600px;
 	background-color: rgba(var(--primary-color-dark), .6);
 	margin: 1em 0;
 	border-top-left-radius: .4em;
@@ -37,8 +39,8 @@
 }
 
 .selected-server .sections-selector > * {
+	padding: .2em 2em;
 	width: 50%;
-	padding: .2em;
 	box-shadow: 0 0 0 #0000;
 	transition: box-shadow .3s;
 }
