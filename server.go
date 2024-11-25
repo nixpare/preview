@@ -222,10 +222,12 @@ func (srv *McServer) Start() error {
 		)
 		return err
 	}
+
 	srv.msm.Logger.Printf(
 		logger.LOG_LEVEL_INFO,
 		"Minecraft server %s started successfully", srv.Name,
 	)
+	srv.lastDisconnect = time.Now().Add(time.Minute * 10)
 
 	go func() {
 		exitStatus := srv.process.Wait()
