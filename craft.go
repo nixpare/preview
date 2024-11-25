@@ -131,6 +131,7 @@ func Nixcraft() http.Handler {
 		nix.LoggerOption(logger.DefaultLogger),
 		nix.EnableErrorCaptureOption(),
 		nix.EnableRecoveryOption(),
+		nix.ConnectToMainOption(),
 	)
 
 	mux.HandleFunc("GET /", n.Handle(func(ctx *nix.Context) {
