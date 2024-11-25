@@ -5,25 +5,7 @@ import { useEffect, useState, MouseEvent } from "react";
 import axios from 'axios';
 import SendCommand from './SendCommand';
 import { Server } from '../models/Server';
-
-type ServerLog = {
-    id: string
-    level: string
-    date: string
-    message: string
-    extra: string
-    tags?: string[]
-}
-
-type ParsedLog = {
-    id: string
-    date: string
-    from: string
-    level: string
-    levelColor: string
-    message: string
-    tags?: string[]
-}
+import { ParsedLog, ServerLog } from '../models/Logs';
 
 type ServerLogsProps = {
     serverName: string;
