@@ -161,7 +161,7 @@ func Nixcraft() http.Handler {
 				path += ".html"
 			}
 
-			ctx.ServeFile(basedir + "/public" + path)
+			ctx.ServeFile(basedir + "/dist" + path)
 		}
 	}))
 
