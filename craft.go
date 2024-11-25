@@ -36,22 +36,6 @@ var (
 	cookieManager *middleware.CookieManager
 )
 
-type existingConnErr struct {
-	ip string
-}
-
-func (e existingConnErr) Error() string {
-	return fmt.Sprintf("%v: %s", errExistingConn, e.ip)
-}
-
-func (e existingConnErr) Unwrap() error {
-	return errExistingConn
-}
-
-var (
-	errExistingConn = errors.New("an existing connection is active from a different location")
-)
-
 func CraftInit(router *server.Router, commandServers []*commands.CommandServer) error {
 	var err error
 	cookieManager, err = middleware.NewCookieManager([]byte(cookie_hashkey), []byte(cookie_blockkey), nil)
@@ -213,22 +197,12 @@ func trustUser(ctx *nix.Context) (mcUser, error) {
 	MC.mutex.Unlock()
 
 	user.user = value
-
-	if value.conn != nil && value.IP != ip {
-		ctx.DeleteCookie(nixcraft_cookie_name)
-		return user, existingConnErr{ip: value.IP}
-	}
-
 	value.IP = ip
+
 	return user, nil
 }
 
 func handleTrustUserResult(ctx *nix.Context, err error) {
-	if ipErr, ok := err.(existingConnErr); ok {
-		ctx.Error(http.StatusUnauthorized, fmt.Sprintf("Already connected from %s", ipErr.ip))
-		return
-	}
-
 	ctx.Error(http.StatusUnauthorized, "Unauthorized request", err)
 }
 
