@@ -3,7 +3,7 @@ import { User } from "./User"
 export type Server = {
 	name: string
 	running: boolean
-	players: User[]
+	players: Record<string, User>
 }
 
 export type ServersInfo = {

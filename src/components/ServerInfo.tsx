@@ -14,9 +14,6 @@ type ServerInfoProps = {
 }
 
 export default function ServerInfo({ user, server, show, showMessage }: ServerInfoProps) {
-	if (!show)
-		return
-	
 	const startServer = async () => {
 		const response = await axios.post(`/${server.name}/start`);
 
@@ -52,8 +49,20 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 		}
 	}
 
+	const sendBroadcast = async (message: string) => {
+		const response = await axios.post(`/${server.name}/broadcast`, message)
+			.catch((error) => {
+				showMessage(error.message);
+			});
+
+		if (!response) return;
+
+		if (response.status >= 400)
+			showMessage(response.data);
+	}
+
 	return (
-		<div className="server-info">
+		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
 			<div>
 				<Button onClick={startServer} disabled={server.running}>Start Server</Button>
 				<Button onClick={stopServer} disabled={!server.running}>Stop Server</Button>
@@ -66,7 +75,7 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 					<i className="fa-solid fa-circle-check connected-check"></i>
 				</>}
 			</div>}
-			<SendCommand cmd="Broadcast Message" route={`/${server.name}/broadcast`} showMessage={showMessage} />
+			<SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
 		</div>
 	)
 }
@@ -84,7 +93,7 @@ export function ServerOnlineState({ server }: ServerOnlineStateProps) {
 			</div>
 			{server.running ? <div className="online-players">
 				<i className="fa-solid fa-users"></i>
-				{server.players?.length ?? 0}
+				{Object.values(server.players).length ?? 0}
 			</div> : undefined}
 		</div>
 	)

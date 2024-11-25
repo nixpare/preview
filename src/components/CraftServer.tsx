@@ -53,7 +53,7 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
                     showMessage={showMessage}
                 />
                 <ServerLogs
-                    server={server}
+                    serverName={serverName} server={server}
                     show={section == 'logs'}
                     showMessage={showMessage}
                 />

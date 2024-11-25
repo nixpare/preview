@@ -12,7 +12,7 @@ type ServerLog = {
     date: string
     message: string
     extra: string
-    tags: string[]
+    tags?: string[]
 }
 
 type ParsedLog = {
@@ -22,10 +22,11 @@ type ParsedLog = {
     level: string
     levelColor: string
     message: string
-    tags: string[]
+    tags?: string[]
 }
 
 type ServerLogsProps = {
+    serverName: string;
     server: Server;
     show: boolean;
     showMessage: (message: string) => void;
@@ -33,39 +34,43 @@ type ServerLogsProps = {
 
 let ws = false as WebSocket | boolean
 
-export default function ServerLogs({ server, show, showMessage }: ServerLogsProps) {
-    if (!show)
-        return
-
+export default function ServerLogs({ serverName, server, show, showMessage }: ServerLogsProps) {
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
 
     const cleanup = () => {
-        //@ts-ignore
-        ws && ws.close && ws.close()
+        wsIsActive(ws) && ws.close()
     }
 
     useEffect(() => {
         updateLogs(logs => {
             logs.length = 0
         })
-    }, [server.name])
+    }, [serverName])
 
     useEffect(() => {
         cleanup()
 
-        //@ts-ignore
-        if (!server.running || (ws && !ws.close))
+        if ((ws && !wsIsActive(ws)))
             return cleanup
 
         ws = true
         queryServerLogs(server.name, showMessage, updateLogs);
 
         return cleanup
-    }, [server.name, server.running]);
+    }, [server]);
+
+    const send = (cmd: string) => {
+        if (!wsIsActive(ws)) {
+            showMessage('Could not send command to server')
+            return
+        }
+
+        ws.send(cmd)
+    }
     
     return (
-        <div>
-            <SendCommand cmd="Command" route={`/${server.name}/cmd`} showMessage={showMessage} prefix="/" />
+        <div style={!show ? { display: 'none'} : undefined}>
+            <SendCommand label="Command" sendFunc={send} prefix="/" />
             <div className="server-logs">
                 <table className="logs-table" style={{whiteSpace: 'pre-wrap'}}>
                     <thead>
@@ -106,7 +111,7 @@ function Log({ log }: { log: ParsedLog }) {
                     {log.message}
                     <div className="tags">
                         Tags:
-                        {log.tags.map(tag => (
+                        {log.tags?.map(tag => (
                             <p key={tag}>{tag}</p>
                         ))}
                     </div>
@@ -130,8 +135,10 @@ async function queryServerLogs(
             onMessage(err.response.data);
         });
 
-    if (response == undefined)
+    if (response == undefined) {
+        ws = false
         return
+    }
 
     ws = new WebSocket(url)
     ws.onopen = () => {
@@ -165,48 +172,59 @@ function parseLog(log: ServerLog, logs: ParsedLog[]) {
 
     let appendToPrevious = false
 
-    if (log.tags.includes('stderr')) {
-        from = 'Server'
-        level = 'FATAL'
-        levelColor = 'hsl(0, 80%, 60%)'
-    } else if (log.tags.includes('user')) {
-        from = 'NixCraft'
-        level = 'USER'
-        levelColor = 'hsl(90, 80%, 60%)'
-    } else {
-        switch (true) {
-            case message.indexOf('] ') >= 0 && message.indexOf(']: ') > message.indexOf('] '):
-                message = message.substring(message.indexOf('] ') + 2, message.length);
-                [from, level] = message.substring(1, message.indexOf(']: ')).split('/', 2)
-                message = message.substring(message.indexOf(']: ') + 3, message.length)
+    switch (true) {
+        case log.tags?.includes('stderr'):
+            from = 'Server'
+            level = 'FATAL'
+            levelColor = 'hsl(0, 80%, 60%)'
 
-                break
-            case message.indexOf(']: ') >= 0:
-                from = 'Server'
-                level = message.substring(1, message.indexOf(']: ')).split(' ', 2)[1]
-                message = message.substring(message.indexOf(']: ') + 3, message.length)
+            break;
+        case log.tags?.includes('user'):
+            from = 'NixCraft'
+            level = 'USER'
+            levelColor = 'hsl(90, 80%, 60%)'
 
-                break
-            default:
-                from = 'Server'
-                level = ''
-                appendToPrevious = true
-                break
-        }
+            break;
+        case log.tags?.includes('server'):
+            from = 'NixCraft'
+            level = 'SERVER'
+            levelColor = 'hsl(90, 80%, 60%)'
 
-        switch (level) {
-            case 'INFO':
-                levelColor = 'hsl(190, 80%, 60%)'
-                break
-            case 'WARN':
-                levelColor = 'hsl(20, 80%, 60%)'
-                break
-            case 'ERROR':
-                levelColor = 'hsl(0, 80%, 60%)'
-                break
-            default:
-                levelColor = ''
-        }
+            break;
+        default:
+            switch (true) {
+                case message.indexOf('] ') >= 0 && message.indexOf(']: ') > message.indexOf('] '):
+                    message = message.substring(message.indexOf('] ') + 2, message.length);
+                    [from, level] = message.substring(1, message.indexOf(']: ')).split('/', 2)
+                    message = message.substring(message.indexOf(']: ') + 3, message.length)
+
+                    break
+                case message.indexOf(']: ') >= 0:
+                    from = 'Server'
+                    level = message.substring(1, message.indexOf(']: ')).split(' ', 2)[1]
+                    message = message.substring(message.indexOf(']: ') + 3, message.length)
+
+                    break
+                default:
+                    from = 'Server'
+                    level = ''
+                    appendToPrevious = true
+                    break
+            }
+
+            switch (level) {
+                case 'INFO':
+                    levelColor = 'hsl(190, 80%, 60%)'
+                    break
+                case 'WARN':
+                    levelColor = 'hsl(20, 80%, 60%)'
+                    break
+                case 'ERROR':
+                    levelColor = 'hsl(0, 80%, 60%)'
+                    break
+                default:
+                    levelColor = ''
+            }
     }
 
     if (log.extra != '')
@@ -225,4 +243,9 @@ function parseLog(log: ServerLog, logs: ParsedLog[]) {
         from: from, level: level, levelColor: levelColor,
         message: message, tags: log.tags
     })
+}
+
+function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
+    // @ts-ignore
+    return ws && ws.close
 }

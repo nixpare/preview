@@ -66,13 +66,35 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 		return err
 	}
 
-	err = router.TaskManager.NewTask("Minecraft Server Preview", func() (startupF server.TaskFunc, execF server.TaskFunc, cleanupF server.TaskFunc) {
-		var alreadyOffline bool
+	err = router.TaskManager.NewTask("NixCraft", func() (startupF server.TaskFunc, execF server.TaskFunc, cleanupF server.TaskFunc) {
+		execF = func(t *server.Task) error {
+			MC.mutex.RLock()
+			defer MC.mutex.RUnlock()
 
-		execF = func(_ *server.Task) error {
-			return taskCheckUsers(MC, &alreadyOffline)
+			now := time.Now()
+			for _, srv := range MC.Servers {
+				srv.m.RLock()
+				isRunning := srv.IsRunning()
+				players := len(srv.Players)
+				srv.m.RUnlock()
+
+				if !isRunning || players != 0 {
+					continue
+				}
+
+				if now.After(srv.lastDisconnect.Add(time.Minute * 10)) {
+					srv.serverLog.Printf(logger.LOG_LEVEL_INFO, "Shutting down server for inactivity")
+					
+					err := srv.Stop()
+					if err != nil {
+						t.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error shutting down Minecraft Server %s: %v", srv.Name, err)
+					}
+				}
+			}
+
+			return nil
 		}
-
+		
 		cleanupF = func(_ *server.Task) error {
 			return MC.StopAll()
 		}
@@ -153,7 +175,6 @@ func Nixcraft() http.Handler {
 	mux.HandleFunc("POST /{server}/start", n.Handle(postStart))
 	mux.HandleFunc("POST /{server}/stop", n.Handle(postStop))
 	mux.HandleFunc("POST /{server}/connect", n.Handle(postConnect))
-	mux.HandleFunc("POST /{server}/cmd", n.Handle(postCmd))
 	mux.HandleFunc("POST /{server}/broadcast", n.Handle(postBroadcast))
 
 	// WebSocket
@@ -178,6 +199,9 @@ func trustUser(ctx *nix.Context) (mcUser, error) {
 	}
 
 	ip := server.SplitAddrPort(ctx.R().RemoteAddr)
+	if ip == "::1" {
+		ip = "127.0.0.1"
+	}
 
 	MC.mutex.Lock()
 	value, ok := MC.users[user.Username]
@@ -195,7 +219,6 @@ func trustUser(ctx *nix.Context) (mcUser, error) {
 	}
 
 	value.IP = ip
-	value.t = time.Now()
 	return user, nil
 }
 
@@ -296,44 +319,6 @@ func postConnect(ctx *nix.Context) {
 	}
 
 	ctx.String("Done!")
-}
-
-func postCmd(ctx *nix.Context) {
-	srvName := ctx.R().PathValue("server")
-
-	user, err := trustUser(ctx)
-	if err != nil {
-		handleTrustUserResult(ctx, err)
-		return
-	}
-
-	MC.mutex.RLock()
-	srv, ok := MC.Servers[srvName]
-	MC.mutex.RUnlock()
-	if !ok {
-		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
-		return
-	}
-
-	if !srv.IsRunning() {
-		ctx.Error(http.StatusBadRequest, "No server is running")
-		return
-	}
-
-	cmd, err := ctx.BodyString()
-	if err != nil {
-		ctx.Error(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	srv.userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent command: <%s>", user.Username, cmd)
-	ctx.AddInteralMessage(fmt.Sprintf("User %s sent command: <%s>", user.Username, cmd))
-
-	err = srv.SendInput(cmd)
-	if err != nil {
-		ctx.Error(http.StatusInternalServerError, err.Error())
-		return
-	}
 }
 
 func postBroadcast(ctx *nix.Context) {
@@ -481,8 +466,14 @@ func wsServerConsole(ctx *nix.Context) {
 		return
 	}
 
-	if !srv.IsRunning() || srv.log == nil {
-		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s is not running", srvName))
+	srv.m.RLock()
+	log := srv.log
+	serverLog := srv.serverLog
+	userLog := srv.userLog
+	srv.m.RUnlock()
+
+	if log == nil {
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s was never started", srvName))
 		return
 	}
 
@@ -499,10 +490,10 @@ func wsServerConsole(ctx *nix.Context) {
 	}
 	defer conn.CloseNow()
 
-	prevLogsN, ch := srv.log.ListenForLogs(20)
+	prevLogsN, ch := log.ListenForLogs(20)
 	defer ch.Unregister()
+	prevLogs := log.GetLogs(0, prevLogsN)
 
-	prevLogs := srv.log.GetLogs(0, prevLogsN)
 	for _, log := range prevLogs {
 		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
 		if err != nil {
@@ -528,9 +519,11 @@ func wsServerConsole(ctx *nix.Context) {
 			}
 
 			cmd := string(b)
+
+			userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent command: <%s>", user.Username, cmd)
 			err = srv.SendInput(cmd)
 			if err != nil {
-				srv.log.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.Name, cmd, err)
+				serverLog.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.Name, cmd, err)
 			}
 		}
 	}()
@@ -542,7 +535,11 @@ func wsServerConsole(ctx *nix.Context) {
 	loop:
 		for {
 			select {
-			case log := <- logCh:
+			case log, ok := <- logCh:
+				if !ok {
+					break loop
+				}
+
 				err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
 				if err != nil {
 					conn.CloseNow()

@@ -3,7 +3,6 @@ package craft
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/nixpare/server/v3/commands"
 )
@@ -91,46 +90,6 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 	}
 }
 
-func taskCheckUsers(msm *McServerManager, alreadyOffline *bool) error {
-	msm.mutex.Lock()
-	defer msm.mutex.Unlock()
-
-	now := time.Now()
-	for _, srv := range msm.Servers {
-		var playing bool
-
-		for userName, user := range msm.users {
-			if user.server != srv {
-				continue
-			}
-
-			if now.After(user.t.Add(time.Minute * 10)) {
-				defer func(key string, value *McUser) {
-					delete(msm.users, key)
-					if value.conn != nil {
-						value.conn.Close()
-					}
-				}(userName, user)
-			} else if user.conn != nil {
-				playing = true
-			}
-		}
-
-		if !playing && srv.IsRunning() {
-			if *alreadyOffline {
-				*alreadyOffline = false
-				return srv.Stop(true)
-			} else {
-				*alreadyOffline = true
-			}
-		} else {
-			*alreadyOffline = false
-		}
-	}
-
-	return nil
-}
-
 func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 	sb := strings.Builder{}
 	sb.WriteString("\nNixcraft Server Status:\n")
@@ -155,19 +114,19 @@ func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 		}
 		sb.WriteString("        Online\n")
 
-		msm.mutex.RLock()
-		players := srv.getOnlinePlayersNoLock()
-		msm.mutex.RUnlock()
+		srv.m.RLock()
 
 		sb.WriteString("\nOnline Players: [ ")
-		for _, p := range players {
+		for _, p := range srv.Players {
 			sb.WriteString("\n            ")
-			sb.WriteString(p)
+			sb.WriteString(p.Name)
 		}
-		if len(players) != 0 {
+		if len(srv.Players) != 0 {
 			sb.WriteString("\n")
 		}
 		sb.WriteString("]\n")
+
+		srv.m.RUnlock()
 	}
 
 	return sc.WriteOutput(sb.String())

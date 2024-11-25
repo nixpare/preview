@@ -36,13 +36,19 @@ type McServerManager struct {
 }
 
 type McServer struct {
-	Name    string    `json:"name"`
-	Players []*McUser `json:"players"`
 	javaExec
+	Name    string             `json:"name"`
+	
+	Players map[string]*McUser `json:"players"`
+	m       sync.RWMutex
+	
 	msm     *McServerManager
 	process *process.Process
 	log     *logger.Logger
 	userLog *logger.Logger
+	serverLog *logger.Logger
+
+	lastDisconnect time.Time
 }
 
 type McUser struct {
@@ -51,7 +57,6 @@ type McUser struct {
 
 	server *McServer
 	conn   net.Conn
-	t      time.Time
 
 	updateBroadcaster *broadcaster.Broadcaster[[]byte]
 }
@@ -75,7 +80,7 @@ func (msm *McServerManager) loadServers() error {
 	defer msm.mutex.Unlock()
 
 	for _, srv := range msm.Servers {
-		err := srv.Stop(true)
+		err := srv.Stop()
 		if err != nil {
 			msm.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error stopping server %s: %v", srv.Name, err)
 			srv.process.Kill()
@@ -105,6 +110,7 @@ loop:
 				execName, args, port := mcServerCmd(child.Name())
 				msm.Servers[e.Name()] = &McServer{
 					Name: e.Name(),
+					Players: make(map[string]*McUser),
 					javaExec: javaExec{
 						execName: execName, args: args,
 						wd: dir, port: port,
@@ -148,13 +154,15 @@ func (msm *McServerManager) Start(name string) error {
 		return err
 	}
 
-	msm.SignalStateUpdate()
 	return nil
 }
 
 func noTrimFunc(s string) string { return s }
 
 func (srv *McServer) Start() error {
+	srv.m.Lock()
+	defer srv.m.Unlock()
+
 	if srv.IsRunning() {
 		return fmt.Errorf("server %s already running", srv.Name)
 	}
@@ -166,11 +174,23 @@ func (srv *McServer) Start() error {
 	}
 	srv.process.InheritConsole(false)
 
+	if srv.log != nil {
+		srv.log.Close()
+	}
 	srv.log = logger.NewLogger(nil)
 	srv.log.TrimFunc = noTrimFunc
 
+	if srv.userLog != nil {
+		srv.userLog.Close()
+	}
 	srv.userLog = srv.log.Clone(nil, true, "user")
 	srv.userLog.TrimFunc = noTrimFunc
+
+	if srv.serverLog != nil {
+		srv.serverLog.Close()
+	}
+	srv.serverLog = srv.log.Clone(nil, true, "server")
+	srv.serverLog.TrimFunc = noTrimFunc
 
 	outLog := srv.log.Clone(nil, true, "stdout")
 	outLog.TrimFunc = noTrimFunc
@@ -224,6 +244,7 @@ func (srv *McServer) Start() error {
 		)
 	}()
 
+	go srv.msm.SignalStateUpdate()
 	return nil
 }
 
@@ -236,12 +257,11 @@ func (msm *McServerManager) Stop(name string) error {
 		return fmt.Errorf("server %s not found", name)
 	}
 
-	err := srv.Stop(false)
+	err := srv.Stop()
 	if err != nil {
 		return err
 	}
 
-	msm.SignalStateUpdate()
 	return nil
 }
 
@@ -251,28 +271,23 @@ func (msm *McServerManager) StopAll() error {
 
 	var errs []error
 	for _, srv := range msm.Servers {
-		errs = append(errs, srv.Stop(true))
+		errs = append(errs, srv.Stop())
 	}
 
-	go msm.SignalStateUpdate()
 	return errors.Join(errs...)
 }
 
-func (srv *McServer) Stop(alreadyLocked bool) error {
+func (srv *McServer) Stop() error {
+	srv.m.RLock()
+	defer srv.m.RUnlock()
+
 	if !srv.IsRunning() {
 		return nil
 	}
+	
+	onlinePlayers := len(srv.Players) > 0
 
-	var onlinePlayers []string
-	if alreadyLocked {
-		onlinePlayers = srv.getOnlinePlayersNoLock()
-	} else {
-		srv.msm.mutex.RLock()
-		onlinePlayers = srv.getOnlinePlayersNoLock()
-		srv.msm.mutex.RUnlock()
-	}
-
-	if len(onlinePlayers) > 0 {
+	if onlinePlayers {
 		srv.process.SendText("/title @a times 0.5s 0.3s 0.5s")
 		shutdownInProgressSubtitle := "/title @a subtitle {\"text\": \"Server is going to shut down\"}"
 
@@ -294,6 +309,7 @@ func (srv *McServer) Stop(alreadyLocked bool) error {
 		return fmt.Errorf("minecraft server %s stop error (code: %d): %w", srv.Name, exitStatus.ExitCode, exitStatus.ExitError)
 	}
 
+	go srv.msm.SignalStateUpdate()
 	return nil
 }
 
@@ -359,18 +375,21 @@ func (srv *McServer) Connect(sc *commands.ServerConn) error {
 	return nil
 }
 
-func (srv *McServer) getOnlinePlayersNoLock() []string {
-	var v []string
-	for _, user := range srv.msm.users {
-		if user.server != srv {
-			continue
-		}
+func (srv *McServer) playerConnected(user *McUser) {
+	srv.m.Lock()
+	srv.Players[user.Name] = user
+	srv.m.Unlock()
 
-		if user.conn != nil {
-			v = append(v, user.Name)
-		}
-	}
-	return v
+	srv.msm.SignalStateUpdate()
+}
+
+func (srv *McServer) playerDisconnected(user *McUser) {
+	srv.m.Lock()
+	delete(srv.Players, user.Name)
+	srv.lastDisconnect = time.Now()
+	srv.m.Unlock()
+
+	srv.msm.SignalStateUpdate()
 }
 
 func (user *McUser) ConnectToServer(srvName string) error {
