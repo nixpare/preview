@@ -1,12 +1,14 @@
 import './ServerLogs.css'
 
 import { useImmer } from "use-immer";
-import { useEffect, useState, MouseEvent, useRef } from "react";
+import { useEffect, useState, MouseEvent, useRef, useContext } from "react";
 import SendCommand from './SendCommand';
 import { Server } from '../models/Server';
 import { ChatLog, ServerLog } from '../models/Logs';
 import { User } from '../models/User';
 import { queryServerLogs, wsIsActive } from '../utils/wsLogs';
+import { userInfo } from 'os';
+import UserContext from '../contexts/userContext';
 
 type ServerLogsProps = {
     serverName: string;
@@ -23,6 +25,7 @@ const setWs = (newWs: WebSocket | boolean) => {
 
 export default function ServerChat({ serverName, server, show, showMessage }: ServerLogsProps) {
     const [logs, updateLogs] = useImmer([] as ChatLog[]);
+    const { user } = useContext(UserContext);
 
     const serverLogsEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
@@ -65,18 +68,20 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
         }
     }
 
-    const send = (cmd: string) => {
+    const send = (message: string) => {
         if (!wsIsActive(ws)) {
-            showMessage('Could not send command to server')
+            showMessage('Could not send message to server')
             return
         }
+
+        let cmd = `/tellraw @p "<${user?.name}> ${message}"`;
 
         ws.send(cmd)
     }
     
     return (
         <div style={!show ? { display: 'none'} : undefined}>
-            <SendCommand label="Command" sendFunc={send} prefix="/" />
+            <SendCommand label="Message" sendFunc={send}/>
             <div className="server-logs" onScroll={onLogsScroll} ref={serverLogsEl}>
                 <table>
                     <thead>
