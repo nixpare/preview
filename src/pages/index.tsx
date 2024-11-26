@@ -10,7 +10,6 @@ import axios from 'axios';
 import { createRoot } from 'react-dom/client';
 import { ServersInfo } from '../models/Server';
 import { User } from '../models/User';
-import UserContext from '../contexts/userContext';
 
 createRoot(document.getElementById('root')!).render(
 	<StrictMode>
@@ -24,6 +23,11 @@ let userWS = false as WebSocket | boolean
 function CraftHome() {
 	const [openSnackbar, setOpenSnackbar] = useState(false);
 	const [errorMessage, setErrorMessage] = useState(localStorage.getItem('username'));
+
+	const showMessage = (message: string): void => {
+		setOpenSnackbar(true);
+		setErrorMessage(message);
+	};
 
 	const [servers, setServers] = useState(undefined as ServersInfo | undefined)
 	useEffect(() => {
@@ -50,10 +54,8 @@ function CraftHome() {
 		}
 	}, [currentServer])
 
-	const showMessage = (message: string): void => {
-		setOpenSnackbar(true);
-		setErrorMessage(message);
-	};
+	if (!user || !servers)
+		return undefined
 
 	const logout = async () => {
 		await axios.get('/logout');
@@ -67,16 +69,21 @@ function CraftHome() {
 	const serverOpened = currentServer != undefined && servers?.servers[currentServer] != undefined
 
 	return (
-		<UserContext.Provider value={{ user: user, servers: servers }}>
+		<>
 			<div className="page-wrapper">
 				<div>
 					<Navbar showLogoutButton onLogout={logout} />
 					<div className="page">
 						{user != undefined && <h2 className="welcome">Welcome, <span>{user.name}</span></h2>}
 						<div className="servers">
-							<CraftServerList aside={serverOpened} setCurrentServer={setCurrentServer} />
+							<CraftServerList
+								servers={servers}
+								aside={serverOpened}
+								setCurrentServer={setCurrentServer}
+							/>
 							{serverOpened ? <>
 								<CraftServer
+									user={user} server={servers.servers[currentServer]}
 									closeServer={closeServer}
 									serverName={currentServer}
 									showMessage={showMessage}
@@ -97,7 +104,7 @@ function CraftHome() {
 				onClose={() => { setOpenSnackbar(false) }}
 				onClick={() => { setOpenSnackbar(false) }}
 			/>
-		</UserContext.Provider>
+		</>
 	)
 }
 

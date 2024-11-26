@@ -1,20 +1,20 @@
 import './ServerLogs.css'
+import './ServerChat.css'
 
-import { useEffect, useState, MouseEvent, useRef, useContext } from "react";
+import { useEffect, useState, MouseEvent, useRef } from "react";
 import SendCommand from './SendCommand';
 import { ChatMessage, ParsedLog } from '../models/Logs';
 import { User } from '../models/User';
-import { getWS } from './CraftServer';
-import UserContext from '../contexts/userContext';
+import axios from 'axios';
 
 type ServerChatProps = {
+    serverName: string;
     chat: ChatMessage[];
     show: boolean;
     showMessage: (message: string) => void;
 }
 
-export default function ServerChat({ chat, show, showMessage }: ServerChatProps) {
-    const { user } = useContext(UserContext);
+export default function ServerChat({ serverName, chat, show, showMessage }: ServerChatProps) {
     const serverChatEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
 
@@ -34,19 +34,35 @@ export default function ServerChat({ chat, show, showMessage }: ServerChatProps)
         }
     }
 
-    const send = (message: string) => {
-        const ws = getWS()
-        if (!ws) {
-            showMessage('Could not send command to server')
-            return
-        }
+    const sendMessage = async (message: string) => {
+        const response = await axios.post(`/${serverName}/message`, message)
+            .catch((error) => {
+                showMessage(error.message);
+            });
 
-        ws.send(`/tellraw @p "<${user?.name}> ${message}"`)
+        if (!response) return;
+
+        if (response.status >= 400)
+            showMessage(response.data);
+    }
+
+    const sendBroadcast = async (message: string) => {
+        const response = await axios.post(`/${serverName}/broadcast`, message)
+            .catch((error) => {
+                showMessage(error.message);
+            });
+
+        if (!response) return;
+
+        if (response.status >= 400)
+            showMessage(response.data);
     }
     
     return (
-        <div style={!show ? { display: 'none'} : undefined}>
-            <SendCommand label="Message" sendFunc={send} />
+        <div className="server-chat" style={!show ? { display: 'none'} : undefined}>
+            <div className="send-broadcast">
+                <SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
+            </div>
             <div className="server-logs" onScroll={onScroll} ref={serverChatEl}>
                 <table>
                     <thead>
@@ -62,6 +78,9 @@ export default function ServerChat({ chat, show, showMessage }: ServerChatProps)
                         ))}
                     </tbody>
                 </table>
+            </div>
+            <div className="send-message">
+                <SendCommand label="Message" sendFunc={sendMessage} />
             </div>
         </div>
     );
@@ -92,29 +111,28 @@ function Message({ message }: { message: ChatMessage }) {
     </tr>
 }
 
-export function parseChatMessage(log: ParsedLog, chat: ChatMessage[], players: User[]) {
+export function parseChatMessage(user: User, log: ParsedLog, chat: ChatMessage[], players: User[]) {
     let message = log.message
-    
-    if (message.trim().startsWith('<')) {
-        const from = message.slice(1, message.indexOf('>'))
-        message = message.slice(message.indexOf('>') + 2, message.length);
-
-        chat.push({
-            id: log.id, date: log.date,
-            from: from, message: message
-        });
-        return;
-
-        for (const player of players) {
-            if (from === player.name) {
-                chat.push({
-                    id: log.id, date: log.date,
-                    from: from, message: message
-                });
-                return;
-            }
-        }
-
-        // if an online player is not found it is NOT a message
+    if (log.tags?.includes('chat')){
+        message = message.slice(message.indexOf('\n')+1)
     }
+    
+    if (!message.trim().startsWith('<'))
+        return
+
+    let from = message.slice(1, message.indexOf('>'))
+    message = message.slice(message.indexOf('>') + 2, message.length);
+
+    if (players.filter(user => user.name == from).length == 0)
+        // if an online player is not found it is NOT a message
+        return
+
+    if (from == user.name) {
+        from = 'You'
+    }
+
+    chat.push({
+        id: log.id, date: log.date,
+        from: from, message: message
+    });
 }

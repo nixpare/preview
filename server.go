@@ -44,9 +44,11 @@ type McServer struct {
 	
 	msm     *McServerManager
 	process *process.Process
+
 	log     *logger.Logger
-	userLog *logger.Logger
 	serverLog *logger.Logger
+	userLog *logger.Logger
+	chatLog *logger.Logger
 
 	lastDisconnect time.Time
 }
@@ -180,17 +182,23 @@ func (srv *McServer) Start() error {
 	srv.log = logger.NewLogger(nil)
 	srv.log.TrimFunc = noTrimFunc
 
+	if srv.serverLog != nil {
+		srv.serverLog.Close()
+	}
+	srv.serverLog = srv.log.Clone(nil, true, "server")
+	srv.serverLog.TrimFunc = noTrimFunc
+
 	if srv.userLog != nil {
 		srv.userLog.Close()
 	}
 	srv.userLog = srv.log.Clone(nil, true, "user")
 	srv.userLog.TrimFunc = noTrimFunc
 
-	if srv.serverLog != nil {
-		srv.serverLog.Close()
+	if srv.chatLog != nil {
+		srv.chatLog.Close()
 	}
-	srv.serverLog = srv.log.Clone(nil, true, "server")
-	srv.serverLog.TrimFunc = noTrimFunc
+	srv.chatLog = srv.log.Clone(nil, true, "chat")
+	srv.chatLog.TrimFunc = noTrimFunc
 
 	outLog := srv.log.Clone(nil, true, "stdout")
 	outLog.TrimFunc = noTrimFunc
@@ -272,8 +280,22 @@ func (msm *McServerManager) StopAll() error {
 	defer msm.mutex.RUnlock()
 
 	var errs []error
+	errsChan := make(chan error, len(msm.Servers))
+	var wg sync.WaitGroup
+
+	wg.Add(len(msm.Servers))
 	for _, srv := range msm.Servers {
-		errs = append(errs, srv.Stop())
+		go func() {
+			defer wg.Done()
+			errsChan <- srv.Stop()
+		}()
+	}
+
+	wg.Wait()
+	close(errsChan)
+
+	for err := range errsChan {
+		errs = append(errs, err)
 	}
 
 	return errors.Join(errs...)
@@ -293,15 +315,15 @@ func (srv *McServer) Stop() error {
 		srv.process.SendText("/title @a times 0.5s 0.3s 0.5s")
 		shutdownInProgressSubtitle := "/title @a subtitle {\"text\": \"Server is going to shut down\"}"
 
-		for i := range 10 {
-			srv.process.SendText(fmt.Sprintf("/title @a title {\"text\": \"%d\"}", 10-i))
+		for i := range 5 {
+			srv.process.SendText(fmt.Sprintf("/title @a title {\"text\": \"%d\"}", 5-i))
 			srv.process.SendText(shutdownInProgressSubtitle)
 			time.Sleep(time.Second)
 		}
 
-		srv.process.SendText("/title @a times 2s 0s 2s")
+		srv.process.SendText("/title @a times 1s 0s 1s")
 		srv.process.SendText("/title @a title {\"text\": \"Server is shutting down\"}")
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 2)
 	}
 
 	srv.process.SendText("stop")

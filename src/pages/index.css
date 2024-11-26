@@ -10,7 +10,7 @@
 	display: flex;
 	justify-content: center;
 	gap: 2em;
-	padding: 3em 2em;
+	padding: 1em 2em;
 	width: 100%;
 	max-height: 120vh;
 	overflow: auto;

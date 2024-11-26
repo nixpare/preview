@@ -7,7 +7,7 @@ nav {
 	padding: 1em 3em;
 	background-color: rgba(var(--bg-color), .5);
 	backdrop-filter: blur(10px);
-	z-index: 100;
+	z-index: 1000;
 }
 
 nav .logo {

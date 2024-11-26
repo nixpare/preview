@@ -3,7 +3,6 @@ import './ServerInfo.css'
 import axios, { AxiosError } from "axios";
 import { Server } from "../models/Server";
 import { User } from "../models/User";
-import SendCommand from "./SendCommand";
 
 type ServerInfoProps = {
 	user: User;
@@ -48,18 +47,6 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 		}
 	}
 
-	const sendBroadcast = async (message: string) => {
-		const response = await axios.post(`/${server.name}/broadcast`, message)
-			.catch((error) => {
-				showMessage(error.message);
-			});
-
-		if (!response) return;
-
-		if (response.status >= 400)
-			showMessage(response.data);
-	}
-
 	return (
 		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
 			<div className="start-stop-buttons">
@@ -74,7 +61,6 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 					<i className="fa-solid fa-circle-check connected-check"></i>
 				</div>}
 			</div>}
-			<SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
 		</div>
 	)
 }

@@ -1,8 +1,7 @@
 import './CraftServer.css'
 
 import ServerLogs, { parseLog } from './ServerLogs';
-import UserContext from "../contexts/userContext";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Server } from "../models/Server";
 import ServerInfo, { ServerOnlineState } from './ServerInfo';
 import ServerChat, { parseChatMessage } from './ServerChat';
@@ -11,24 +10,23 @@ import { Logs } from '../models/Logs';
 import { User } from '../models/User';
 import axios from 'axios';
 
-type Section = 'info' | 'logs' | 'chat'
+type Section = 'info' | 'chat' | 'logs'
 
 export type ServerProps = {
-    closeServer: () => void;
+    user: User;
+    server: Server;
     serverName: string;
+    closeServer: () => void;
     showMessage: (message: string) => void;
 }
 
-export default function CraftServer({ closeServer, serverName, showMessage }: ServerProps) {
+export default function CraftServer({ user, server, serverName, closeServer, showMessage }: ServerProps) {
     const [section, setSection] = useState('info' as Section)
 
     const [logs, updateLogs] = useImmer<Logs>({
         rawLogs: [],
         chat: [],
     })
-
-    const { user, servers } = useContext(UserContext)
-    const server: Server | undefined = servers?.servers[serverName]
 
     useEffect(() => {
         updateLogs(logs => {
@@ -38,9 +36,6 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
     }, [serverName])
 
     useEffect(() => {
-        if (!server)
-            return
-        
         cleanup()
 
         if ((ws && !wsIsActive(ws)))
@@ -48,15 +43,13 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
 
         ws = true
         queryServerLogs(
-            server.name, Object.values(server.players ?? {}),
+            server.name, user,
+            Object.values(server.players ?? {}),
             updateLogs, showMessage
         );
 
         return cleanup
     }, [server]);
-
-    if (!user || !servers || !server)
-        return undefined
 
     return (
         <div className="selected-server">
@@ -73,16 +66,16 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
                     Info
                 </div>
                 <div
-                    className={section == 'logs' ? 'selected' : undefined}
-                    onClick={() => setSection('logs')}
-                >
-                    Logs
-                </div>
-                <div
                     className={section == 'chat' ? 'selected' : undefined}
                     onClick={() => setSection('chat')}
                 >
                     Chat
+                </div>
+                <div
+                    className={section == 'logs' ? 'selected' : undefined}
+                    onClick={() => setSection('logs')}
+                >
+                    Logs
                 </div>
             </div>
             <div className="sections">
@@ -91,14 +84,15 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
                     show={section == 'info'}
                     showMessage={showMessage}
                 />
+                <ServerChat
+                    serverName={serverName}
+                    chat={logs.chat}
+                    show={section == 'chat'}
+                    showMessage={showMessage}
+                />
                 <ServerLogs
                     logs={logs.rawLogs}
                     show={section == 'logs'}
-                    showMessage={showMessage}
-                />
-                <ServerChat
-                    chat={logs.chat}
-                    show={section == 'chat'}
                     showMessage={showMessage}
                 />
             </div>
@@ -109,7 +103,7 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
 let ws = false as WebSocket | boolean
 
 async function queryServerLogs(
-    serverName: string, players: User[],
+    serverName: string, user: User, players: User[],
     updateLogs: Updater<Logs>, showMessage: (message: string) => void
 ) {
     const url = `/ws/${serverName}/console`;
@@ -139,7 +133,7 @@ async function queryServerLogs(
         updateLogs(logs => {
             const log = JSON.parse(ev.data)
             const parsed = parseLog(log, logs.rawLogs)
-            parseChatMessage(parsed, logs.chat, players)
+            parseChatMessage(user, parsed, logs.chat, players)
         })
     }
     ws.onerror = () => {

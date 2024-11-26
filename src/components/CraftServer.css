@@ -45,14 +45,14 @@
 .selected-server .sections-selector > * {
 	padding: .2em 2em;
 	width: 50%;
+	border-top-left-radius: .4em;
+	border-top-right-radius: .4em;
 	box-shadow: 0 0 0 #0000;
 	transition: box-shadow .3s;
 }
 
 .selected-server .sections-selector>*.selected {
 	background-color: rgba(var(--primary-color), 1);
-	border-top-left-radius: .4em;
-	border-top-right-radius: .4em;
 }
 
 .selected-server .sections-selector>:not(.selected) {

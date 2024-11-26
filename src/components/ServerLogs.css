@@ -1,6 +1,6 @@
 .server-logs {
-	margin-top: 1em;
 	--border-radius: .5em;
+	max-width: 100%;
 	max-height: calc(100% - 6em);
 	overflow: auto;
 }
@@ -53,16 +53,23 @@
 	padding: .4em 1em;
 }
 
+.server-logs>table th:last-child {
+	min-width: 20vw;
+}
+
 .log-message {
 	display: flex;
 	cursor: pointer;
 }
 
 .log-message > .message {
-	width: fit-content;
 	white-space: pre-wrap;
 	text-wrap: nowrap;
 	margin-bottom: .4em;
+	width: fit-content;
+	min-width: 20vw;
+	max-width: 50vw;
+	overflow: auto;
 }
 
 .log-message.multiline > .message {

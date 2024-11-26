@@ -43,7 +43,6 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
     
     return (
         <div style={!show ? { display: 'none'} : undefined}>
-            <SendCommand label="Command" sendFunc={send} prefix="/" />
             <div className="server-logs" onScroll={onLogsScroll} ref={serverLogsEl}>
                 <table>
                     <thead>
@@ -61,6 +60,7 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
                     </tbody>
                 </table>
             </div>
+            <SendCommand label="Command" sendFunc={send} prefix="/" />
         </div>
     );
 }
@@ -100,11 +100,7 @@ function Log({ log }: { log: ParsedLog }) {
 export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
     let from: string, level: string, levelColor: string;
     let message = log.message
-
-    const date = new Date(log.date).toLocaleDateString(undefined, {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", second: "2-digit",
-    }).replace(', ', '\n')
+    const date = convertDateToString(new Date(log.date))
 
     let appendToPrevious = false
 
@@ -118,6 +114,12 @@ export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
         case log.tags?.includes('user'):
             from = 'NixCraft'
             level = 'USER'
+            levelColor = 'hsl(90, 80%, 60%)'
+
+            break;
+        case log.tags?.includes('chat'):
+            from = 'NixCraft'
+            level = 'CHAT'
             levelColor = 'hsl(90, 80%, 60%)'
 
             break;
@@ -181,4 +183,11 @@ export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
     }
     
     return parsed
+}
+
+export function convertDateToString(d: Date): string {
+    return d.toLocaleDateString(undefined, {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit",
+    }).replace(', ', '\n')
 }

@@ -160,6 +160,8 @@ func Nixcraft() http.Handler {
 	mux.HandleFunc("POST /{server}/start", n.Handle(postStart))
 	mux.HandleFunc("POST /{server}/stop", n.Handle(postStop))
 	mux.HandleFunc("POST /{server}/connect", n.Handle(postConnect))
+
+	mux.HandleFunc("POST /{server}/message", n.Handle(postMessage))
 	mux.HandleFunc("POST /{server}/broadcast", n.Handle(postBroadcast))
 
 	// WebSocket
@@ -296,19 +298,22 @@ func postConnect(ctx *nix.Context) {
 	ctx.String("Done!")
 }
 
-func postBroadcast(ctx *nix.Context) {
+func postGeneralMessage(ctx *nix.Context, buildCmd func(user *McUser, message string) string) (user *McUser, srv *McServer, message string, ok bool) {
 	srvName := ctx.R().PathValue("server")
 
-	user, err := trustUser(ctx)
+	u, err := trustUser(ctx)
 	if err != nil {
 		handleTrustUserResult(ctx, err)
 		return
 	}
 
+	user = u.user
+
 	MC.mutex.RLock()
-	srv, ok := MC.Servers[srvName]
+	var found bool
+	srv, found = MC.Servers[srvName]
 	MC.mutex.RUnlock()
-	if !ok {
+	if !found {
 		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
 		return
 	}
@@ -318,21 +323,53 @@ func postBroadcast(ctx *nix.Context) {
 		return
 	}
 
-	message, err := ctx.BodyString()
+	message, err = ctx.BodyString()
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	srv.userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent broadcast message: <%s>", user.Username, message)
-	ctx.AddInteralMessage(fmt.Sprintf("User %s sent broadcast message: <%s>", user.Username, message))
-
-	broadcastMessage := fmt.Sprintf("/title @a title {\"text\": \"%s\"}", message)
-	err = srv.SendInput(broadcastMessage)
+	cmd := buildCmd(user, message)
+	err = srv.SendInput(cmd)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	ok = true
+	return
+}
+
+func postMessage(ctx *nix.Context) {
+	user, srv, message, ok := postGeneralMessage(ctx, func(user *McUser, message string) string {
+		return fmt.Sprintf(`/tellraw @p "<%s (Web)> %s"`, user.Name, message)
+	})
+	if !ok {
+		return
+	}
+
+	srv.chatLog.AddLog(
+		logger.LOG_LEVEL_INFO,
+		fmt.Sprintf("User %s sent message: <%s>", user.Name, message),
+		fmt.Sprintf("<%s> %s", user.Name, message),
+		true,
+	)
+}
+
+func postBroadcast(ctx *nix.Context) {
+	user, srv, message, ok := postGeneralMessage(ctx, func(user *McUser, message string) string {
+		return fmt.Sprintf(`/title @a title {"text": "<%s (Web)> %s"}`, user.Name, message)
+	})
+	if !ok {
+		return
+	}
+
+	srv.chatLog.AddLog(
+		logger.LOG_LEVEL_INFO,
+		fmt.Sprintf("User %s sent broadcast message: <%s>", user.Name, message),
+		fmt.Sprintf("<%s> %s", user.Name, message),
+		true,
+	)
 }
 
 //

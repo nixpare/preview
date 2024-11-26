@@ -1,21 +1,16 @@
+import { ServersInfo } from '../models/Server';
 import './CraftServerList.css'
 
-import { useContext } from "react";
-import UserContext from "../contexts/userContext";
 import { ServerOnlineState } from './ServerInfo';
 
 export type ServerListProps = {
+  servers: ServersInfo
   aside: boolean
   setCurrentServer: (serverName: string) => void
 }
 
-export default function CraftServerList({ aside, setCurrentServer }: ServerListProps) {
-  const { user, servers } = useContext(UserContext)
-
-  if (!user || !servers)
-    return undefined
-
-  return (
+export default function CraftServerList({ servers, aside, setCurrentServer }: ServerListProps) {
+ return (
     <div className={`servers-list ${aside ? 'aside' : ''}`}>
       <h3>Servers</h3>
       <ul>
