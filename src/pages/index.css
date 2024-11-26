@@ -8,12 +8,11 @@
 
 .servers {
 	display: flex;
-	align-items: center;
 	justify-content: center;
 	gap: 2em;
 	padding: 3em 2em;
 	width: 100%;
-	max-height: 90vh;
+	max-height: 120vh;
 	overflow: auto;
 }
 
