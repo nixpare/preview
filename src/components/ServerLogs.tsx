@@ -1,11 +1,11 @@
 import './ServerLogs.css'
 
-import { Updater, useImmer } from "use-immer";
+import { useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent, useRef } from "react";
-import axios from 'axios';
 import SendCommand from './SendCommand';
 import { Server } from '../models/Server';
 import { ParsedLog, ServerLog } from '../models/Logs';
+import { queryServerLogs, wsIsActive } from '../utils/wsLogs';
 
 type ServerLogsProps = {
     serverName: string;
@@ -39,7 +39,7 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
             return cleanup
 
         ws = true
-        queryServerLogs(server.name, showMessage, updateLogs);
+        queryServerLogs(ws, server.name, showMessage, updateLogs, server, parseLog as any);
 
         return cleanup
     }, [server]);
@@ -125,43 +125,6 @@ function Log({ log }: { log: ParsedLog }) {
     </tr>
 }
 
-async function queryServerLogs(
-    serverName: string, onMessage: (message: string) => void,
-    updateLogs: Updater<any[]>
-) {
-    const url = `/ws/${serverName}/console`;
-
-    const response = await axios.get(url)
-        .catch(err => {
-            onMessage(err.response.data);
-        });
-
-    if (response == undefined) {
-        ws = false
-        return
-    }
-
-    ws = new WebSocket(url)
-    ws.onopen = () => {
-        updateLogs((logs) => {
-            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
-            logs.length = 0
-        });
-    }
-    ws.onclose = () => {
-        ws = false
-    }
-    ws.onmessage = (ev) => {
-        updateLogs(logs => {
-            const log = JSON.parse(ev.data)
-            parseLog(log, logs)
-        })
-    }
-    ws.onerror = () => {
-        onMessage('Server connection error')
-    }
-}
-
 function parseLog(log: ServerLog, logs: ParsedLog[]) {
     let from: string, level: string, levelColor: string;
     let message = log.message
@@ -244,9 +207,4 @@ function parseLog(log: ServerLog, logs: ParsedLog[]) {
         from: from, level: level, levelColor: levelColor,
         message: message, tags: log.tags
     })
-}
-
-function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
-    // @ts-ignore
-    return ws && ws.close
 }

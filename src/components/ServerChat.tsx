@@ -1,12 +1,12 @@
 import './ServerLogs.css'
 
-import { Updater, useImmer } from "use-immer";
+import { useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent, useRef } from "react";
-import axios from 'axios';
 import SendCommand from './SendCommand';
 import { Server } from '../models/Server';
 import { ChatLog, ServerLog } from '../models/Logs';
 import { User } from '../models/User';
+import { queryServerLogs, wsIsActive } from '../utils/wsLogs';
 
 type ServerLogsProps = {
     serverName: string;
@@ -40,7 +40,7 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
             return cleanup
 
         ws = true
-        queryServerLogs(server.name, showMessage, updateLogs, server);
+        queryServerLogs(ws, server.name, showMessage, updateLogs, server, getChatMessage);
 
         return cleanup
     }, [server]);
@@ -118,46 +118,6 @@ function Log({ log }: { log: ChatLog }) {
     </tr>
 }
 
-async function queryServerLogs(
-    serverName: string, onMessage: (message: string) => void,
-    updateLogs: Updater<any[]>,
-    server: Server
-) {
-    const url = `/ws/${serverName}/console`;
-
-    const players = Object.values(server.players ?? {});
-
-    const response = await axios.get(url)
-        .catch(err => {
-            onMessage(err.response.data);
-        });
-
-    if (response == undefined) {
-        ws = false
-        return
-    }
-
-    ws = new WebSocket(url)
-    ws.onopen = () => {
-        updateLogs((logs) => {
-            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
-            logs.length = 0
-        });
-    }
-    ws.onclose = () => {
-        ws = false
-    }
-    ws.onmessage = (ev) => {
-        updateLogs(logs => {
-            const log = JSON.parse(ev.data)
-            getChatMessage(log, logs, players)
-        })
-    }
-    ws.onerror = () => {
-        onMessage('Server connection error')
-    }
-}
-
 function getChatMessage(log: ServerLog, logs: ChatLog[], players: User[]) {
     let message = log.message
 
@@ -192,9 +152,4 @@ function getChatMessage(log: ServerLog, logs: ChatLog[], players: User[]) {
 
         // if an online player is not found it is NOT a message
     }
-}
-
-function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
-    // @ts-ignore
-    return ws && ws.close
 }
