@@ -92,7 +92,7 @@ export function ServerOnlineState({ server }: ServerOnlineStateProps) {
 			</div>
 			{server.running ? <div className="online-players">
 				<i className="fa-solid fa-users"></i>
-				{Object.values(server.players).length ?? 0}
+				{Object.values(server.players ?? {}).length}
 			</div> : undefined}
 		</div>
 	)
