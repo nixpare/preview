@@ -1,52 +1,19 @@
 import './ServerLogs.css'
 
-import { useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent, useRef } from "react";
 import SendCommand from './SendCommand';
-import { Server } from '../models/Server';
 import { ParsedLog, ServerLog } from '../models/Logs';
-import { queryServerLogs, wsIsActive } from '../utils/wsLogs';
+import { getWS } from './CraftServer';
 
 type ServerLogsProps = {
-    serverName: string;
-    server: Server;
+    logs: ParsedLog[];
     show: boolean;
     showMessage: (message: string) => void;
 }
 
-let ws = false as WebSocket | boolean;
-
-const setWs = (newWs: WebSocket | boolean) => {
-    ws = newWs
-}
-
-export default function ServerLogs({ serverName, server, show, showMessage }: ServerLogsProps) {
-    const [logs, updateLogs] = useImmer([] as ParsedLog[]);
-
+export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps) {
     const serverLogsEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
-
-    const cleanup = () => {
-        wsIsActive(ws) && ws.close()
-    }
-
-    useEffect(() => {
-        updateLogs(logs => {
-            logs.length = 0
-        })
-    }, [serverName])
-
-    useEffect(() => {
-        cleanup()
-
-        if ((ws && !wsIsActive(ws)))
-            return cleanup
-
-        setWs(true)
-        queryServerLogs( setWs, server.name, showMessage, updateLogs, server, parseLog as any);
-
-        return cleanup
-    }, [server]);
 
     useEffect(() => {
         if (!scrollAtBottom)
@@ -65,7 +32,8 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
     }
 
     const send = (cmd: string) => {
-        if (!wsIsActive(ws)) {
+        const ws = getWS()
+        if (!ws) {
             showMessage('Could not send command to server')
             return
         }
@@ -129,7 +97,7 @@ function Log({ log }: { log: ParsedLog }) {
     </tr>
 }
 
-function parseLog(log: ServerLog, logs: ParsedLog[]) {
+export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
     let from: string, level: string, levelColor: string;
     let message = log.message
 
@@ -198,17 +166,19 @@ function parseLog(log: ServerLog, logs: ParsedLog[]) {
     if (log.extra != '')
         message = message.concat('\n', log.extra)
 
+    const parsed: ParsedLog = {
+        id: log.id, date: date,
+        from: from, level: level, levelColor: levelColor,
+        message: message, tags: log.tags
+    }
+
     if (appendToPrevious && logs[logs.length-1] != undefined) {
         let lastLog = logs[logs.length -1]
         lastLog.message = lastLog.message.concat('\n', message)
         logs[logs.length -1] = lastLog
-
-        return
+    } else {
+        logs.push(parsed)
     }
-
-    logs.push({
-        id: log.id, date: date,
-        from: from, level: level, levelColor: levelColor,
-        message: message, tags: log.tags
-    })
+    
+    return parsed
 }

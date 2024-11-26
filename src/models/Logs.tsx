@@ -7,6 +7,11 @@ export type ServerLog = {
 	tags?: string[]
 }
 
+export type Logs = {
+	rawLogs: ParsedLog[]
+	chat: ChatMessage[]
+}
+
 export type ParsedLog = {
 	id: string
 	date: string
@@ -17,7 +22,7 @@ export type ParsedLog = {
 	tags?: string[]
 }
 
-export type ChatLog = {
+export type ChatMessage = {
 	id: string
 	date: string
 	from: string
