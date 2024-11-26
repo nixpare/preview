@@ -1,59 +1,30 @@
 import './ServerLogs.css'
 
-import { Updater, useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent, useRef } from "react";
-import axios from 'axios';
 import SendCommand from './SendCommand';
-import { Server } from '../models/Server';
-import { ChatLog, ServerLog } from '../models/Logs';
+import { ChatMessage, ParsedLog } from '../models/Logs';
 import { User } from '../models/User';
+import { getWS } from './CraftServer';
 
-type ServerLogsProps = {
-    serverName: string;
-    server: Server;
+type ServerChatProps = {
+    chat: ChatMessage[];
     show: boolean;
     showMessage: (message: string) => void;
 }
 
-let ws = false as WebSocket | boolean
-
-export default function ServerChat({ serverName, server, show, showMessage }: ServerLogsProps) {
-    const [logs, updateLogs] = useImmer([] as ChatLog[]);
-    
-    const serverLogsEl = useRef<HTMLDivElement>(null);
+export default function ServerChat({ chat, show, showMessage }: ServerChatProps) {
+    const serverChatEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
-
-    const cleanup = () => {
-        wsIsActive(ws) && ws.close()
-    }
-
-    useEffect(() => {
-        updateLogs(logs => {
-            logs.length = 0
-        })
-    }, [serverName])
-
-    useEffect(() => {
-        cleanup()
-
-        if ((ws && !wsIsActive(ws)))
-            return cleanup
-
-        ws = true
-        queryServerLogs(server.name, showMessage, updateLogs, server);
-
-        return cleanup
-    }, [server]);
 
     useEffect(() => {
         if (!scrollAtBottom)
             return
         
-        serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
+        serverChatEl.current?.scroll({ top: serverChatEl.current.scrollHeight, behavior: 'smooth' })
         setScrollAtBottom(true)
-    }, [logs])
+    }, [chat])
 
-    const onLogsScroll = (ev: React.UIEvent<HTMLDivElement>) => {
+    const onScroll = (ev: React.UIEvent<HTMLDivElement>) => {
         if (ev.currentTarget.scrollTop + ev.currentTarget.clientHeight < ev.currentTarget.scrollHeight) {
             setScrollAtBottom(false)
         } else {
@@ -62,7 +33,8 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
     }
 
     const send = (cmd: string) => {
-        if (!wsIsActive(ws)) {
+        const ws = getWS()
+        if (!ws) {
             showMessage('Could not send command to server')
             return
         }
@@ -72,8 +44,8 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
     
     return (
         <div style={!show ? { display: 'none'} : undefined}>
-            <SendCommand label="Command" sendFunc={send} prefix="/" />
-            <div className="server-logs" onScroll={onLogsScroll} ref={serverLogsEl}>
+            <SendCommand label="Command" sendFunc={send} prefix="" />
+            <div className="server-logs" onScroll={onScroll} ref={serverChatEl}>
                 <table>
                     <thead>
                         <tr>
@@ -83,8 +55,8 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
                         </tr>
                     </thead>
                     <tbody>
-                        {logs.map(log => (
-                            <Log key={log.id} log={log} />
+                        {chat.map(message => (
+                            <Message key={message.id} message={message} />
                         ))}
                     </tbody>
                 </table>
@@ -93,8 +65,8 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
     );
 }
 
-function Log({ log }: { log: ChatLog }) {
-    const multiline = log.message.includes('\n') ? 'multiline' : ''
+function Message({ message }: { message: ChatMessage }) {
+    const multiline = message.message.includes('\n') ? 'multiline' : ''
 
     const [showing, setShowing] = useState(false)
     const toggleShowing = (ev: MouseEvent) => {
@@ -103,12 +75,12 @@ function Log({ log }: { log: ChatLog }) {
     }
 
     return <tr>
-        <td>{log.date}</td>
-        <td>{log.from}</td>
+        <td>{message.date}</td>
+        <td>{message.from}</td>
         <td>
             <div className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
                 <div className="message">
-                    {log.message}
+                    {message.message}
                 </div>
                 <div className="expand">
                     <i className="fa-solid fa-chevron-right"></i>
@@ -118,73 +90,24 @@ function Log({ log }: { log: ChatLog }) {
     </tr>
 }
 
-async function queryServerLogs(
-    serverName: string, onMessage: (message: string) => void,
-    updateLogs: Updater<any[]>,
-    server: Server
-) {
-    const url = `/ws/${serverName}/console`;
-
-    const players = Object.values(server.players ?? {});
-
-    const response = await axios.get(url)
-        .catch(err => {
-            onMessage(err.response.data);
-        });
-
-    if (response == undefined) {
-        ws = false
-        return
-    }
-
-    ws = new WebSocket(url)
-    ws.onopen = () => {
-        updateLogs((logs) => {
-            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
-            logs.length = 0
-        });
-    }
-    ws.onclose = () => {
-        ws = false
-    }
-    ws.onmessage = (ev) => {
-        updateLogs(logs => {
-            const log = JSON.parse(ev.data)
-            getChatMessage(log, logs, players)
-        })
-    }
-    ws.onerror = () => {
-        onMessage('Server connection error')
-    }
-}
-
-function getChatMessage(log: ServerLog, logs: ChatLog[], players: User[]) {
+export function parseChatMessage(log: ParsedLog, chat: ChatMessage[], players: User[]) {
     let message = log.message
-
-    const date = new Date(log.date).toLocaleDateString(undefined, {
-        year: "numeric", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", second: "2-digit",
-    }).replace(', ', '\n')
-
-    switch (true) {
-        case message.indexOf('] ') >= 0 && message.indexOf(']: ') > message.indexOf('] '):
-            message = message.substring(message.indexOf('] ') + 2, message.length); // first I remove the date/time
-            message = message.substring(message.indexOf(']: ') + 3, message.length) // then I remove the sender
-            break
-        case message.indexOf(']: ') >= 0:
-            message = message.substring(message.indexOf(']: ') + 3, message.length)
-    }
-
+    
     if (message.trim().startsWith('<')) {
         const from = message.slice(1, message.indexOf('>'))
-
         message = message.slice(message.indexOf('>') + 2, message.length);
+
+        chat.push({
+            id: log.id, date: log.date,
+            from: from, message: message
+        });
+        return;
 
         for (const player of players) {
             if (from === player.name) {
-                logs.push({
-                    id: log.id, date: date,
-                    from, message: message
+                chat.push({
+                    id: log.id, date: log.date,
+                    from: from, message: message
                 });
                 return;
             }
@@ -192,9 +115,4 @@ function getChatMessage(log: ServerLog, logs: ChatLog[], players: User[]) {
 
         // if an online player is not found it is NOT a message
     }
-}
-
-function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
-    // @ts-ignore
-    return ws && ws.close
 }

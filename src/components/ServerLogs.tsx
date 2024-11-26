@@ -1,48 +1,19 @@
 import './ServerLogs.css'
 
-import { Updater, useImmer } from "use-immer";
 import { useEffect, useState, MouseEvent, useRef } from "react";
-import axios from 'axios';
 import SendCommand from './SendCommand';
-import { Server } from '../models/Server';
 import { ParsedLog, ServerLog } from '../models/Logs';
+import { getWS } from './CraftServer';
 
 type ServerLogsProps = {
-    serverName: string;
-    server: Server;
+    logs: ParsedLog[];
     show: boolean;
     showMessage: (message: string) => void;
 }
 
-let ws = false as WebSocket | boolean
-
-export default function ServerLogs({ serverName, server, show, showMessage }: ServerLogsProps) {
-    const [logs, updateLogs] = useImmer([] as ParsedLog[]);
-    
+export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps) {
     const serverLogsEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
-
-    const cleanup = () => {
-        wsIsActive(ws) && ws.close()
-    }
-
-    useEffect(() => {
-        updateLogs(logs => {
-            logs.length = 0
-        })
-    }, [serverName])
-
-    useEffect(() => {
-        cleanup()
-
-        if ((ws && !wsIsActive(ws)))
-            return cleanup
-
-        ws = true
-        queryServerLogs(server.name, showMessage, updateLogs);
-
-        return cleanup
-    }, [server]);
 
     useEffect(() => {
         if (!scrollAtBottom)
@@ -61,7 +32,8 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
     }
 
     const send = (cmd: string) => {
-        if (!wsIsActive(ws)) {
+        const ws = getWS()
+        if (!ws) {
             showMessage('Could not send command to server')
             return
         }
@@ -125,44 +97,7 @@ function Log({ log }: { log: ParsedLog }) {
     </tr>
 }
 
-async function queryServerLogs(
-    serverName: string, onMessage: (message: string) => void,
-    updateLogs: Updater<any[]>
-) {
-    const url = `/ws/${serverName}/console`;
-
-    const response = await axios.get(url)
-        .catch(err => {
-            onMessage(err.response.data);
-        });
-
-    if (response == undefined) {
-        ws = false
-        return
-    }
-
-    ws = new WebSocket(url)
-    ws.onopen = () => {
-        updateLogs((logs) => {
-            // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
-            logs.length = 0
-        });
-    }
-    ws.onclose = () => {
-        ws = false
-    }
-    ws.onmessage = (ev) => {
-        updateLogs(logs => {
-            const log = JSON.parse(ev.data)
-            parseLog(log, logs)
-        })
-    }
-    ws.onerror = () => {
-        onMessage('Server connection error')
-    }
-}
-
-function parseLog(log: ServerLog, logs: ParsedLog[]) {
+export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
     let from: string, level: string, levelColor: string;
     let message = log.message
 
@@ -231,22 +166,19 @@ function parseLog(log: ServerLog, logs: ParsedLog[]) {
     if (log.extra != '')
         message = message.concat('\n', log.extra)
 
+    const parsed: ParsedLog = {
+        id: log.id, date: date,
+        from: from, level: level, levelColor: levelColor,
+        message: message, tags: log.tags
+    }
+
     if (appendToPrevious && logs[logs.length-1] != undefined) {
         let lastLog = logs[logs.length -1]
         lastLog.message = lastLog.message.concat('\n', message)
         logs[logs.length -1] = lastLog
-
-        return
+    } else {
+        logs.push(parsed)
     }
-
-    logs.push({
-        id: log.id, date: date,
-        from: from, level: level, levelColor: levelColor,
-        message: message, tags: log.tags
-    })
-}
-
-function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
-    // @ts-ignore
-    return ws && ws.close
+    
+    return parsed
 }
