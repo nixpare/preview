@@ -7,7 +7,6 @@ import { Server } from '../models/Server';
 import { ChatLog, ServerLog } from '../models/Logs';
 import { User } from '../models/User';
 import { queryServerLogs, wsIsActive } from '../utils/wsLogs';
-import { userInfo } from 'os';
 import UserContext from '../contexts/userContext';
 
 type ServerLogsProps = {
@@ -75,6 +74,13 @@ export default function ServerChat({ serverName, server, show, showMessage }: Se
         }
 
         let cmd = `/tellraw @p "<${user?.name}> ${message}"`;
+
+        updateLogs(logs => {
+            logs.push({
+                id: logs.length.toString(), date: new Date().toLocaleDateString(),
+                from: user?.name || 'You', message
+            });
+        });
 
         ws.send(cmd)
     }
