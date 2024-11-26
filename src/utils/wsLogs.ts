@@ -5,7 +5,7 @@ import { ChatLog, ParsedLog, ServerLog } from "../models/Logs";
 import { User } from "../models/User";
 
 export async function queryServerLogs(
-    ws: WebSocket | boolean,
+    setWs: (ws: WebSocket | boolean) => void,
     serverName: string, onMessage: (message: string) => void,
     updateLogs: Updater<any[]>,
     server: Server,
@@ -21,29 +21,31 @@ export async function queryServerLogs(
         });
 
     if (response == undefined) {
-        ws = false
+        setWs(false)
         return
     }
 
-    ws = new WebSocket(url)
-    ws.onopen = () => {
+    const newWs = new WebSocket(url)
+    newWs.onopen = () => {
         updateLogs((logs) => {
             // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
             logs.length = 0
         });
     }
-    ws.onclose = () => {
-        ws = false
+    newWs.onclose = () => {
+        setWs(false)
     }
-    ws.onmessage = (ev) => {
+    newWs.onmessage = (ev) => {
         updateLogs(logs => {
             const log = JSON.parse(ev.data)
             updateLogsFn(log, logs, players)
         })
     }
-    ws.onerror = () => {
+    newWs.onerror = () => {
         onMessage('Server connection error')
     }
+
+    setWs(newWs)
 }
 
 export function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {

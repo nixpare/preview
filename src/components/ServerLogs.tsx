@@ -14,11 +14,15 @@ type ServerLogsProps = {
     showMessage: (message: string) => void;
 }
 
-let ws = false as WebSocket | boolean
+let ws = false as WebSocket | boolean;
+
+const setWs = (newWs: WebSocket | boolean) => {
+    ws = newWs
+}
 
 export default function ServerLogs({ serverName, server, show, showMessage }: ServerLogsProps) {
     const [logs, updateLogs] = useImmer([] as ParsedLog[]);
-    
+
     const serverLogsEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(false)
 
@@ -38,8 +42,8 @@ export default function ServerLogs({ serverName, server, show, showMessage }: Se
         if ((ws && !wsIsActive(ws)))
             return cleanup
 
-        ws = true
-        queryServerLogs(ws, server.name, showMessage, updateLogs, server, parseLog as any);
+        setWs(true)
+        queryServerLogs( setWs, server.name, showMessage, updateLogs, server, parseLog as any);
 
         return cleanup
     }, [server]);
