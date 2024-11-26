@@ -16,3 +16,10 @@ export type ParsedLog = {
 	message: string
 	tags?: string[]
 }
+
+export type ChatLog = {
+	id: string
+	date: string
+	from: string
+	message: string
+}

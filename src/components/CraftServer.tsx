@@ -5,8 +5,9 @@ import UserContext from "../contexts/userContext";
 import { useContext, useState } from "react";
 import { Server } from "../models/Server";
 import ServerInfo, { ServerOnlineState } from './ServerInfo';
+import ServerChat from './ServerChat';
 
-type Section = 'info' | 'logs'
+type Section = 'info' | 'logs' | 'chat'
 
 export type ServerProps = {
     closeServer: () => void;
@@ -45,6 +46,12 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
                 >
                     Logs
                 </div>
+                <div
+                    className={section == 'chat' ? 'selected' : undefined}
+                    onClick={() => setSection('chat')}
+                >
+                    Chat
+                </div>
             </div>
             <div className="sections">
                 <ServerInfo
@@ -55,6 +62,11 @@ export default function CraftServer({ closeServer, serverName, showMessage }: Se
                 <ServerLogs
                     serverName={serverName} server={server}
                     show={section == 'logs'}
+                    showMessage={showMessage}
+                />
+                <ServerChat
+                    serverName={serverName} server={server}
+                    show={section == 'chat'}
                     showMessage={showMessage}
                 />
             </div>
