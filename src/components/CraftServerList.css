@@ -1,13 +1,30 @@
-.servers-list {
+.servers-list.aside {
+	width: unset;
+}
+
+.servers-list > h3 {
+	font-size: 2em;
+}
+
+.servers-list > ul {
 	list-style: none;
-	width: fit-content;
+	width: 100%;
 	margin: 1em 0;
 	padding: 0;
 	display: flex;
 	flex-wrap: wrap;
-	max-width: 70vw;
+	align-items: center;
 	justify-content: center;
-	gap: 1em;
+	gap: 3em;
+	max-width: 70vw;
+}
+
+.servers-list.aside>h3 {
+	display: none;
+}
+
+.servers-list.aside > ul {
+	width: min-content;
 }
 
 .servers-list.aside {
@@ -20,16 +37,31 @@
 	justify-content: space-between;
 	align-items: center;
 	gap: 2em;
-	background-color: rgba(0, 0, 0, .4);
+	background-color: rgba(var(--primary-color-very-dark), .65);
 	border-radius: .4em;
-	padding: 1.4em 2em;
+	padding: 2em 3em;
 	text-align: left;
 	cursor: pointer;
 	box-shadow: 0 0 0 #0000;
 	transition: box-shadow .3s;
 }
 .server-entry:hover {
-	box-shadow: 0 0 1em rgba(var(--primary-color-light), .5);
+	box-shadow: 0 0 1em rgba(var(--secondary-color-light), .4);
+}
+.servers-list.aside .server-entry {
+	width: -webkit-fill-available;
+}
+
+.server-entry > div {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+}
+
+.server-entry .server-name {
+	font-size: 1.3em;
+	color: rgb(var(--secondary-color));
+	font-weight: bold;
 }
 
 .server-entry .server-type {

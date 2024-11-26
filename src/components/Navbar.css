@@ -5,7 +5,7 @@ nav {
 	width: 100%;
 	justify-content: space-between;
 	padding: 1em 3em;
-	background-color: rgba(var(--background-color), .5);
+	background-color: rgba(var(--bg-color), .5);
 	backdrop-filter: blur(10px);
 	z-index: 100;
 }

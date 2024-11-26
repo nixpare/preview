@@ -5,3 +5,15 @@
 	gap: 1em;
 	padding: 1em 0;
 }
+
+.send-command input {
+	z-index: 200;
+}
+
+.send-command button {
+	transform: translateX(-1.5em);
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	z-index: 100;
+	padding: .8em 1em;
+}

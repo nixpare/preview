@@ -1,6 +1,5 @@
 import './SendCommand.css'
 
-import { Button } from "@mui/material"
 import { useState } from "react";
 
 export type SendCommandProps = {
@@ -34,7 +33,7 @@ export default ({label, sendFunc, prefix=""}: SendCommandProps) => {
         <div className='send-command'>
             <h5>{label}</h5> {/*We need to add a label prop.*/}
             <input type="text" value={command} onChange={changeCommand} onKeyDown={handleEnter} />
-            <Button onClick={send}>Send</Button>
+            <button className="primary-button" onClick={send}>Send</button>
         </div>
     )    
 }

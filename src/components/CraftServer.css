@@ -28,11 +28,15 @@
 	color: rgb(var(--primary-color-light));
 }
 
+.selected-server h1 {
+	color: rgb(var(--secondary-color));
+}
+
 .selected-server .sections-selector {
 	display: flex;
 	width: 60%;
 	max-width: 600px;
-	background-color: rgba(var(--primary-color-dark), .6);
+	background-color: rgba(var(--primary-color-dark), 1);
 	margin: 1em 0;
 	border-top-left-radius: .4em;
 	border-top-right-radius: .4em;
@@ -46,7 +50,7 @@
 }
 
 .selected-server .sections-selector>*.selected {
-	background-color: rgba(var(--primary-color), .4);
+	background-color: rgba(var(--primary-color), 1);
 	border-top-left-radius: .4em;
 	border-top-right-radius: .4em;
 }

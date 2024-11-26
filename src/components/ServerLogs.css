@@ -17,11 +17,15 @@
 }
 
 .server-logs>table th {
-	background-color: rgba(var(--primary-color), .6);
+	background-color: rgba(var(--primary-color), 1);
 }
 
 .server-logs>table td {
-	background-color: rgba(var(--primary-color), .2);
+	background-color: rgba(var(--primary-color-dark), 1);
+}
+
+.server-logs>table td:first-child {
+	color: rgb(255, 255, 255, .6);
 }
 
 .server-logs>table td:not(:last-child) {

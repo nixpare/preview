@@ -1,9 +1,21 @@
 @import url(https://fonts.googleapis.com/css?family=Inter:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800&display=swap);
 
 :root {
-  --primary-color: 102, 16, 242;
-  --primary-color-light: 116, 77, 255;
-  --primary-color-dark: 88, 0, 230;
+  --primary-color: 0, 53, 102;
+  --primary-color-light: 86, 131, 174;
+  --primary-color-dark: 0, 29, 61;
+  --primary-color-very-dark: 0, 8, 20;
+  --primary-color-grey: 51, 72, 91;
+
+  --secondary-color: 255, 195, 0;
+  --secondary-color-light: 255, 225, 104;
+
+  /* --primary-color: 106, 153, 78;
+    --primary-color-dark: 45, 70, 50;
+    --primary-color-very-dark: 36, 47, 38;
+  
+    --secondary-color: 188, 71, 73;
+    --secondary-color-light: 242, 94, 96; */
 
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -11,7 +23,7 @@
 
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
-  --background-color: 33, 29, 58;
+  --bg-color: var(--primary-color-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -27,7 +39,7 @@
 
 body {
   min-height: 100vh;
-  background-color: rgb(var(--background-color));
+  background-color: rgb(var(--bg-color));
 }
 
 a {
@@ -40,24 +52,28 @@ button {
   cursor: pointer;
   transition: color .3s, background-color .3s, border-color .3s, box-shadown .3s;
 }
+
 button.hidden {
   display: none;
 }
 
 .primary-button {
-  color: #fff;
-  background-color: rgb(var(--primary-color));
+  color: #000;
+  background-color: rgb(var(--secondary-color));
   border: 2px solid transparent;
 }
+
 .primary-button:hover {
-  border-color: rgb(var(--primary-color-light));
+  border-color: rgb(var(--secondary-color-light));
 }
+
 .primary-button:active {
-  background-color: rgb(var(--primary-color-dark));
-  border-color: rgb(var(--primary-color));
+  background-color: rgb(var(--secondary-color-light));
+  border-color: rgb(var(--secondary-color));
 }
+
 .primary-button.disabled {
-  background-color: rgba(var(--primary-color), 0.5);
+  background-color: rgba(var(--secondary-color), 0.5);
 }
 
 ::-webkit-scrollbar {
@@ -89,11 +105,12 @@ button.hidden {
 }
 
 input {
-  background-color: rgba(255, 255, 255, .3);
+  background-color: rgb(var(--primary-color-grey));
   border: 0;
   border-radius: .4em;
   padding: 1em 1.4em;
   min-width: 30ch;
+  appearance: none;
 }
 input::placeholder {
   color: rgba(255, 255, 255, .5);

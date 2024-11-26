@@ -2,7 +2,6 @@ import './ServerInfo.css'
 
 import axios, { AxiosError } from "axios";
 import { Server } from "../models/Server";
-import { Button } from "@mui/material";
 import { User } from "../models/User";
 import SendCommand from "./SendCommand";
 
@@ -63,17 +62,17 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 
 	return (
 		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
-			<div>
-				<Button onClick={startServer} disabled={server.running}>Start Server</Button>
-				<Button onClick={stopServer} disabled={!server.running}>Stop Server</Button>
+			<div className="start-stop-buttons">
+				<button onClick={startServer} disabled={server.running}>Start</button>
+				<button onClick={stopServer} disabled={!server.running}>Stop</button>
 			</div>
-			{server.running && <div>
+			{server.running && <div className="connect">
 				{user.server != server.name ? <>
-					<Button onClick={connectToServer}>Connect to this Server</Button>
-				</> : <>
+					<button onClick={connectToServer}>Connect</button>
+				</> : <div>
 					Connected
 					<i className="fa-solid fa-circle-check connected-check"></i>
-				</>}
+				</div>}
 			</div>}
 			<SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
 		</div>
