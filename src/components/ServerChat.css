@@ -12,3 +12,47 @@
 .server-chat .send-message input {
 	width: 100%;
 }
+
+.server-chat .chat {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: .2em;
+}
+
+.server-chat .chat .message {
+	font-size: .9em;
+	padding: .4em 1em;
+	min-width: 20ch;
+	background-color: rgb(var(--primary-color));
+	border-radius: 1em;
+	text-align: left;
+	align-self: start;
+}
+
+.server-chat .chat .message.self {
+	background-color: rgb(var(--primary-color-light));
+	color: #000;
+	text-align: right;
+	align-self: end;
+}
+
+.server-chat .chat .message .from {
+	font-weight: bold;
+	color: rgba(var(--secondary-color), 1);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+.server-chat .chat .message.self .from {
+	display: none;
+}
+
+.server-chat .chat .message .date {
+	font-size: .7em;
+	text-align: right;
+}
+.server-chat .chat .message.self .date {
+	text-align: left;
+}

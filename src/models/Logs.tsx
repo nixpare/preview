@@ -25,7 +25,7 @@ export type ParsedLog = {
 export type ChatMessage = {
 	id: string
 	date: string
-	from: string	// it can take the value 'you' if the message is from the user
-	username: string
+	from: string
 	message: string
+	self: boolean
 }
