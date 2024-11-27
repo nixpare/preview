@@ -5,6 +5,7 @@ import SendCommand from './SendCommand';
 import { ChatMessage, ParsedLog } from '../models/Logs';
 import { User } from '../models/User';
 import axios from 'axios';
+import { getProfileImage, ProfileImageType } from '../utils/ProfileImageCache';
 
 type ServerChatProps = {
     serverName: string;
@@ -77,9 +78,9 @@ export default function ServerChat({ serverName, chat, show, showMessage }: Serv
 function Message({ message }: { message: ChatMessage }) {
     const [profilePicture, setProfilePicture] = useState<string | null>(null)
     useEffect(() => {
-        axios.get(`/profile/${message.from}?type=headhelm`, { responseType: 'blob'})
-            .then(response => {
-                setProfilePicture(URL.createObjectURL(response.data))
+        getProfileImage(message.from, ProfileImageType.HEADHELM)
+            .then(image => {
+                setProfilePicture(URL.createObjectURL(image))
             });
     }, []);
     
@@ -96,7 +97,7 @@ function Message({ message }: { message: ChatMessage }) {
     </div>
 }
 
-export function parseChatMessage(user: User, log: ParsedLog, chat: ChatMessage[], players: User[]) {
+export function parseChatMessage(user: User, log: ParsedLog, chat: ChatMessage[]) {
     let message = log.message
     if (log.tags?.includes('chat')) {
         message = message.slice(message.indexOf('\n') + 1)
@@ -107,10 +108,6 @@ export function parseChatMessage(user: User, log: ParsedLog, chat: ChatMessage[]
 
     let from = message.slice(1, message.indexOf('>'))
     message = message.slice(message.indexOf('>') + 2, message.length);
-
-    if (players.filter(user => user.name == from).length == 0)
-        // if an online player is not found it is NOT a message
-        return
 
     chat.push({
         id: log.id, date: log.date,

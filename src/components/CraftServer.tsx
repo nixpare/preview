@@ -44,7 +44,6 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
         ws = true
         queryServerLogs(
             server.name, user,
-            Object.values(server.players ?? {}),
             updateLogs, showMessage
         );
 
@@ -103,7 +102,7 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
 let ws = false as WebSocket | boolean
 
 async function queryServerLogs(
-    serverName: string, user: User, players: User[],
+    serverName: string, user: User,
     updateLogs: Updater<Logs>, showMessage: (message: string) => void
 ) {
     const url = `/ws/${serverName}/console`;
@@ -133,7 +132,7 @@ async function queryServerLogs(
         updateLogs(logs => {
             const log = JSON.parse(ev.data)
             const parsed = parseLog(log, logs.rawLogs)
-            parseChatMessage(user, parsed, logs.chat, players)
+            parseChatMessage(user, parsed, logs.chat)
         })
     }
     ws.onerror = () => {

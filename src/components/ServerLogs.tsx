@@ -13,7 +13,7 @@ type ServerLogsProps = {
 
 export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps) {
     const serverLogsEl = useRef<HTMLDivElement>(null);
-    const [scrollAtBottom, setScrollAtBottom] = useState(false)
+    const [scrollAtBottom, setScrollAtBottom] = useState(true)
 
     useEffect(() => {
         if (!scrollAtBottom)

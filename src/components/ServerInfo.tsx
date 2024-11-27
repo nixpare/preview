@@ -4,6 +4,7 @@ import axios, { AxiosError } from "axios";
 import { Server } from "../models/Server";
 import { User } from "../models/User";
 import { useEffect, useState } from 'react';
+import { getProfileImage, ProfileImageType } from '../utils/ProfileImageCache';
 
 type ServerInfoProps = {
 	user: User;
@@ -20,17 +21,15 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 			const playerPictures: { [key: string]: string } = {};
 
 			for (const player of Object.values(server.players ?? {})) {
-				const response = await axios.get(`/profile/${player.name}`, { responseType: 'blob' });
-				if (response.status === 200) {
-					playerPictures[player.name] = URL.createObjectURL(response.data);
-				}
+				const data = await getProfileImage(player.name, ProfileImageType.ARMOR_BUST)
+				playerPictures[player.name] = URL.createObjectURL(data)
 			}
 
 			setPlayerPictures(playerPictures);
 		}
 
 		fetchPlayerPictures();
-	}, [server.players?.length]);
+	}, [server.players]);
 
 	const startServer = async () => {
 		const response = await axios.post(`/${server.name}/start`);
