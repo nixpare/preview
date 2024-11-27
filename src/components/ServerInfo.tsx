@@ -3,6 +3,7 @@ import './ServerInfo.css'
 import axios, { AxiosError } from "axios";
 import { Server } from "../models/Server";
 import { User } from "../models/User";
+import { useEffect, useState } from 'react';
 
 type ServerInfoProps = {
 	user: User;
@@ -12,6 +13,25 @@ type ServerInfoProps = {
 }
 
 export default function ServerInfo({ user, server, show, showMessage }: ServerInfoProps) {
+	const [playerPictures, setPlayerPictures] = useState<{ [key: string]: string }>({});
+
+	useEffect(() => {
+		const fetchPlayerPictures = async () => {
+			const playerPictures: { [key: string]: string } = {};
+
+			for (const player of Object.values(server.players ?? {})) {
+				const response = await axios.get(`/profile/${player.name}`, { responseType: 'blob' });
+				if (response.status === 200) {
+					playerPictures[player.name] = URL.createObjectURL(response.data);
+				}
+			}
+
+			setPlayerPictures(playerPictures);
+		}
+
+		fetchPlayerPictures();
+	}, [server.players?.length]);
+
 	const startServer = async () => {
 		const response = await axios.post(`/${server.name}/start`);
 
@@ -61,6 +81,14 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 					<i className="fa-solid fa-circle-check connected-check"></i>
 				</div>}
 			</div>}
+			<div>
+				{server.running && Object.keys(playerPictures).map((username) => {
+					return <div key={username}>
+						<img src={playerPictures[username]} alt={username} />
+						{username}
+					</div>;
+				})}
+			</div>
 		</div>
 	)
 }

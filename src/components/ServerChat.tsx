@@ -69,7 +69,7 @@ export default function ServerChat({ serverName, chat, show, showMessage }: Serv
                         <tr>
                             <th scope="col">TIME</th>
                             <th scope="col">FROM</th>
-                            <th scope="col">LOG</th>
+                            <th scope="col">MESSAGE</th>
                         </tr>
                     </thead>
                     <tbody>
