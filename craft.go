@@ -228,17 +228,17 @@ func getProfilePicture(ctx *nix.Context) {
 	}
 
 	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/armor/bust/%s/100.svg", username))
-
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "Unable to fetch profile picture", err)
 		return
 	}
 
-	ctx.Header().Set("Content-Type", "blob")
-
-	io.Copy(ctx, resp.Body)
-
-	ctx.Body()
+	ctx.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
+	_, err = io.Copy(ctx, resp.Body)
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "Unable to provide profile picture", err)
+		return
+	}
 }
 
 //
