@@ -77,7 +77,7 @@ export default function ServerChat({ serverName, chat, show, showMessage }: Serv
 function Message({ message }: { message: ChatMessage }) {
     const [profilePicture, setProfilePicture] = useState<string | null>(null)
     useEffect(() => {
-        axios.get(`/profile/${message.from}`, { responseType: 'blob' })
+        axios.get(`/profile/${message.from}?type=headhelm`, { responseType: 'blob'})
             .then(response => {
                 setProfilePicture(URL.createObjectURL(response.data))
             });
@@ -88,7 +88,7 @@ function Message({ message }: { message: ChatMessage }) {
 
     return <div className={`message ${message.self ? 'self' : ''}`}>
         <div className="from">
-            {!message.self && profilePicture && <img src={profilePicture} />}
+            {profilePicture && <img src={profilePicture} />}
             <div>{message.from}</div>
         </div>
         <div className="content">{message.message}</div>

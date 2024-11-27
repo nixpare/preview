@@ -220,6 +220,16 @@ func getLogout(ctx *nix.Context) {
 	ctx.DeleteCookie(nixcraft_cookie_name)
 }
 
+type ImageType string
+const (
+	ARMOR_BUST ImageType = "armor_bust"
+	HEADHELM ImageType = "headhelm"
+)
+
+func (i ImageType) ToURL() string {
+	return strings.ReplaceAll(string(i), "_", "/")
+}
+
 func getProfilePicture(ctx *nix.Context) {
 	username := ctx.R().PathValue("username")
 	if username == "" {
@@ -227,7 +237,20 @@ func getProfilePicture(ctx *nix.Context) {
 		return
 	}
 
-	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/armor/bust/%s/100.svg", username))
+	query := ctx.R().URL.Query()
+
+	var urlPath string
+	switch ImageType(query.Get("type")) {
+	case ARMOR_BUST:
+		urlPath = ARMOR_BUST.ToURL()
+	case HEADHELM:
+		urlPath = HEADHELM.ToURL()
+	default:
+		urlPath = ARMOR_BUST.ToURL()
+	}
+
+
+	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/%s/%s/100.svg", urlPath, username))
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "Unable to fetch profile picture", err)
 		return

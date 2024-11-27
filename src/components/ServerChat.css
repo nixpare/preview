@@ -46,7 +46,12 @@
 	justify-content: flex-start;
 }
 .server-chat .chat .message.self .from {
-	display: none;
+	justify-content: flex-end;
+}
+
+.server-chat .chat .message .from img {
+	height: 1.4em;
+	margin-right: .2em;
 }
 
 .server-chat .chat .message .date {
