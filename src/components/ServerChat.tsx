@@ -97,15 +97,16 @@ function Message({ message }: { message: ChatMessage }) {
     }
 
     useEffect(() => {
-        axios.get(`https://mineskin.eu/armor/bust/${message.username}/100.svg`, { responseType: 'blob' })
+        axios.get(`/profile/${message.username}`, { responseType: 'blob' })
         .then(response => {
+            console.log(response)
             setProfilePicture(URL.createObjectURL(response.data) )
         });
     }, []);
 
     return <tr>
         <td>{message.date}</td>
-        <td><img src={profilePicture} alt={"profilePic"} width={50}/> {message.from}</td>
+        <td>{profilePicture && <img src={profilePicture} width={50}/>} {message.from}</td>
         <td>
             <div className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
                 <div className="message">

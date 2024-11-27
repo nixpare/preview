@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -151,6 +152,7 @@ func Nixcraft() http.Handler {
 
 	// GET
 	mux.HandleFunc("GET /logout", n.Handle(getLogout))
+	mux.HandleFunc("GET /profile/{username}", n.Handle(getProfilePicture))
 
 	// POST
 	mux.HandleFunc("POST /", n.Handle(func(ctx *nix.Context) {
@@ -216,6 +218,27 @@ func getLogout(ctx *nix.Context) {
 	ctx.DisableLogging()
 	ctx.DisableErrorCapture()
 	ctx.DeleteCookie(nixcraft_cookie_name)
+}
+
+func getProfilePicture(ctx *nix.Context) {
+	username := ctx.R().PathValue("username")
+	if username == "" {
+		ctx.Error(http.StatusBadRequest, "Invalid request", "missing username")
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/armor/bust/%s/100.svg", username))
+
+	if err != nil {
+		ctx.Error(http.StatusInternalServerError, "Unable to fetch profile picture", err)
+		return
+	}
+
+	ctx.Header().Set("Content-Type", "blob")
+
+	io.Copy(ctx, resp.Body)
+
+	ctx.Body()
 }
 
 //
