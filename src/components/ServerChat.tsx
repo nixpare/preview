@@ -90,14 +90,22 @@ function Message({ message }: { message: ChatMessage }) {
     const multiline = message.message.includes('\n') ? 'multiline' : ''
 
     const [showing, setShowing] = useState(false)
+    const [profilePicture, setProfilePicture] = useState<any>(null)
     const toggleShowing = (ev: MouseEvent) => {
         ev.preventDefault()
         setShowing(!showing)
     }
 
+    useEffect(() => {
+        axios.get(`https://mineskin.eu/armor/bust/${message.username}/100.svg`, { responseType: 'blob' })
+        .then(response => {
+            setProfilePicture(URL.createObjectURL(response.data) )
+        });
+    }, []);
+
     return <tr>
         <td>{message.date}</td>
-        <td>{message.from}</td>
+        <td><img src={profilePicture} alt={"profilePic"} width={50}/> {message.from}</td>
         <td>
             <div className={`log-message ${multiline} ${showing ? 'show' : ''}`} onClick={toggleShowing}>
                 <div className="message">
@@ -133,6 +141,7 @@ export function parseChatMessage(user: User, log: ParsedLog, chat: ChatMessage[]
 
     chat.push({
         id: log.id, date: log.date,
-        from: from, message: message
+        from: from, message: message,
+        username: user.name
     });
 }
