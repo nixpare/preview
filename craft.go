@@ -365,7 +365,7 @@ func postGeneralMessage(ctx *nix.Context, buildCmd func(user *McUser, message st
 	}
 
 	if !srv.IsRunning() {
-		ctx.Error(http.StatusBadRequest, "No server is running")
+		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s is not running", srvName))
 		return
 	}
 

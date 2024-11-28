@@ -1,3 +1,4 @@
+import { InRelief } from '../UI/InRelief';
 import './SendCommand.css'
 
 import { useState } from "react";
@@ -31,9 +32,17 @@ export default ({label, sendFunc, prefix=""}: SendCommandProps) => {
 
     return (
         <div className='send-command'>
-            <h5>{label}</h5> {/*We need to add a label prop.*/}
-            <input type="text" value={command} onChange={changeCommand} onKeyDown={handleEnter} />
-            <button className="primary-button" onClick={send}>Send</button>
+            <h5>{label}</h5>
+            <InRelief reversed>
+                <div className="input-wrapper">
+                    <input type="text" value={command} onChange={changeCommand} onKeyDown={handleEnter} />
+                    <InRelief clickable>
+                        <button className="primary-button" onClick={send}>
+                            <i className="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </InRelief>
+                </div>
+            </InRelief>
         </div>
-    )    
+    )
 }

@@ -1,3 +1,7 @@
+.in-relief {
+	padding: .5em;
+}
+
 .in-relief>* {
 	border: 0;
 	background: transparent;
@@ -9,7 +13,7 @@
 }
 
 .in-relief.reverse>*,
-in-relief.active>button,
+.in-relief.active>*,
 .in-relief.hover:hover>* {
 	box-shadow: 0 0 0 #0000,
 		0 0 0 #0000,
@@ -24,7 +28,7 @@ in-relief.active>button,
 		inset 0 0 0 #0000;
 }
 
-.in-relief:not(.hover):not(.disabled):hover>button {
+.in-relief:not(.hover):not(.disabled).clickable:hover>* {
 	box-shadow: .3em .1em .5em #0004,
 		0em 0em .5em #fff1,
 		inset 0 0 0 #0000,
@@ -36,13 +40,13 @@ in-relief.active>button,
 }
 
 .in-relief:not(.reverse)>*>*,
-.in-relief.reverse.active>button>*,
+.in-relief.reverse.active>*>*,
 .in-relief.reverse.hover:hover>*>* {
 	transform: translateY(0);
 }
 
-.in-relief.reverse>*>*,
-.in-relief.active>button>*,
+.in-relief.reverse.clickable:not(.active)>*>*,
+.in-relief.active>*>*,
 .in-relief.hover:hover>*>* {
 	transform: translateY(.2em);
 }

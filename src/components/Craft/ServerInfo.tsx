@@ -15,23 +15,6 @@ type ServerInfoProps = {
 }
 
 export default function ServerInfo({ user, server, show, showMessage }: ServerInfoProps) {
-	const [playerPictures, setPlayerPictures] = useState<{ [key: string]: string }>({});
-
-	useEffect(() => {
-		const fetchPlayerPictures = async () => {
-			const playerPictures: { [key: string]: string } = {};
-
-			for (const player of Object.values(server.players ?? {})) {
-				const data = await getProfileImage(player.name, ProfileImageType.ARMOR_BUST)
-				playerPictures[player.name] = URL.createObjectURL(data)
-			}
-
-			setPlayerPictures(playerPictures);
-		}
-
-		fetchPlayerPictures();
-	}, [server.players]);
-
 	const startServer = async () => {
 		const response = await axios.post(`/${server.name}/start`);
 
@@ -93,12 +76,9 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 					<i className="fa-solid fa-circle-check connected-check"></i>
 				</div>}
 			</div>}
-			<div>
-				{server.running && Object.keys(playerPictures).map((username) => {
-					return <div key={username}>
-						<img src={playerPictures[username]} alt={username} />
-						{username}
-					</div>;
+			<div className="online-players">
+				{server.running && Object.values(server.players || {}).map(player => {
+					return <PlayerTag name={player.name} key={player.name} />
 				})}
 			</div>
 		</div>
@@ -121,5 +101,34 @@ export function ServerOnlineState({ server }: ServerOnlineStateProps) {
 				{Object.values(server.players ?? {}).length}
 			</div> : undefined}
 		</div>
+	)
+}
+
+type PlayerTagProps = {
+	name: string
+}
+
+function PlayerTag({ name }: PlayerTagProps) {
+	const [profilePicture, setProfilePicture] = useState<string | null>(null)
+	const [switchProfile, setSwitchProfile] = useState(false)
+
+	useEffect(() => {
+		getProfileImage(name, switchProfile ? ProfileImageType.HEADHELM : ProfileImageType.ARMOR_BUST)
+			.then(image => {
+				setProfilePicture(URL.createObjectURL(image))
+			});
+	}, [switchProfile]);
+
+	const onHover = () => {
+		setSwitchProfile(!switchProfile)
+	}
+
+	return (
+		<InRelief hoverable>
+			<div className="player-tag" onMouseEnter={onHover}>
+				{profilePicture && <img src={profilePicture} />}
+				<div>{name}</div>
+			</div>
+		</InRelief>
 	)
 }

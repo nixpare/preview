@@ -30,7 +30,7 @@ export function InRelief({ children, reversed, hoverable, clickable, disabled }:
 
 	return (
 		<div
-			className={`in-relief ${reversed ? 'reverse' : ''} ${hoverable ? 'hover' : ''} ${clicked ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+			className={`in-relief ${reversed ? 'reverse' : ''} ${hoverable ? 'hover' : ''} ${clickable ? 'clickable' : ''} ${clicked ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
 			onClick={onClick}
 		>
 			{children}
