@@ -37,3 +37,9 @@ package-lock.json
 # Mc-Server directories
 
 mc-servers
+
+# Private infos
+
+src/public/robots.txt
+src/public/site.webmanifest
+src/public/sitemap.xml
