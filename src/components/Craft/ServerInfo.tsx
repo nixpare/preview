@@ -1,10 +1,11 @@
 import './ServerInfo.css'
 
 import axios, { AxiosError } from "axios";
-import { Server } from "../models/Server";
-import { User } from "../models/User";
+import { Server } from "../../models/Server";
+import { User } from "../../models/User";
 import { useEffect, useState } from 'react';
-import { getProfileImage, ProfileImageType } from '../utils/ProfileImageCache';
+import { getProfileImage, ProfileImageType } from '../../utils/ProfileImageCache';
+import { InRelief } from '../UI/InRelief';
 
 type ServerInfoProps = {
 	user: User;
@@ -69,12 +70,24 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 	return (
 		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
 			<div className="start-stop-buttons">
-				<button onClick={startServer} disabled={server.running}>Start</button>
-				<button onClick={stopServer} disabled={!server.running}>Stop</button>
+				<InRelief clickable disabled={server.running}>
+					<button onClick={startServer} disabled={server.running}>
+						<div>Start</div>
+					</button>
+				</InRelief>
+				<InRelief clickable disabled={!server.running}>
+					<button onClick={stopServer} disabled={!server.running}>
+						<div>Stop</div>
+					</button>
+				</InRelief>
 			</div>
-			{server.running && <div className="connect">
+			{<div className="connect">
 				{user.server != server.name ? <>
-					<button onClick={connectToServer}>Connect</button>
+					<InRelief clickable>
+						<button onClick={connectToServer}>
+							<div>Connect</div>
+						</button>
+					</InRelief>
 				</> : <div>
 					Connected
 					<i className="fa-solid fa-circle-check connected-check"></i>

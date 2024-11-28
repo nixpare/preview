@@ -38,7 +38,7 @@
 	justify-content: space-between;
 	align-items: center;
 	gap: 2em;
-	background-color: rgba(var(--primary-color-very-dark), .65);
+	background-color: rgba(var(--primary-color-very-dark), .4);
 	border-radius: .4em;
 	padding: 2em 3em;
 	text-align: left;

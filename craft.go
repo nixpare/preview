@@ -250,7 +250,7 @@ func getProfilePicture(ctx *nix.Context) {
 	}
 
 
-	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/%s/%s/100.svg", urlPath, username))
+	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/%s/%s", urlPath, username))
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "Unable to fetch profile picture", err)
 		return

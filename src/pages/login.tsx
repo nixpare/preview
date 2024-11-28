@@ -4,13 +4,13 @@ import axios, { AxiosError } from 'axios';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Snackbar } from '@mui/material';
 import { StrictMode, useState } from 'react';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/UI/Navbar';
 import { createRoot } from 'react-dom/client';
-import Footer from '../components/Footer';
+import Footer from '../components/UI/Footer';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-      <CraftLogin />
+    <CraftLogin />
   </StrictMode>,
 )
 
@@ -23,26 +23,28 @@ function CraftLogin() {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
-  const { register, handleSubmit } = useForm<FormValues>({defaultValues: {
-    username: localStorage.getItem('username') ?? '',
-  }});
+  const { register, handleSubmit } = useForm<FormValues>({
+    defaultValues: {
+      username: localStorage.getItem('username') ?? '',
+    }
+  });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-      const response = await axios.post(location.href, {
-        username: data.username,
-        passcode: data.password
-      }).catch((error: AxiosError) => {
-        console.log(error)
-        setErrorMessage(`${error.message}`);
-        setOpenSnackbar(true);
-      });
+    const response = await axios.post(location.href, {
+      username: data.username,
+      passcode: data.password
+    }).catch((error: AxiosError) => {
+      console.log(error)
+      setErrorMessage(`${error.message}`);
+      setOpenSnackbar(true);
+    });
 
-      if (response == undefined || response.status >= 400)
-        return
+    if (response == undefined || response.status >= 400)
+      return
 
-      localStorage.setItem('username', data.username);
-      window.location.href = '/';
-    }
+    localStorage.setItem('username', data.username);
+    window.location.href = '/';
+  }
 
   return (
     <>

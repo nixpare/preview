@@ -1,11 +1,11 @@
 import './index.css'
 
 import { StrictMode, useEffect, useState } from 'react'
-import CraftServerList from '../components/CraftServerList';
-import CraftServer from '../components/CraftServer';
-import Footer from '../components/Footer';
+import CraftServerList from '../components/Craft/CraftServerList';
+import CraftServer from '../components/Craft/CraftServer';
+import Footer from '../components/UI/Footer';
 import { Snackbar } from '@mui/material';
-import Navbar from '../components/Navbar';
+import Navbar from '../components/UI/Navbar';
 import axios from 'axios';
 import { createRoot } from 'react-dom/client';
 import { ServersInfo } from '../models/Server';

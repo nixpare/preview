@@ -2,7 +2,7 @@ import './ServerLogs.css'
 
 import { useEffect, useState, MouseEvent, useRef } from "react";
 import SendCommand from './SendCommand';
-import { ParsedLog, ServerLog } from '../models/Logs';
+import { ParsedLog, ServerLog } from '../../models/Logs';
 import { getWS } from './CraftServer';
 
 type ServerLogsProps = {
@@ -18,7 +18,7 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
     useEffect(() => {
         if (!scrollAtBottom)
             return
-        
+
         serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
         setScrollAtBottom(true)
     }, [logs])
@@ -40,9 +40,9 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
 
         ws.send(cmd)
     }
-    
+
     return (
-        <div style={!show ? { display: 'none'} : undefined}>
+        <div style={!show ? { display: 'none' } : undefined}>
             <div className="server-logs" onScroll={onLogsScroll} ref={serverLogsEl}>
                 <table>
                     <thead>
@@ -174,14 +174,14 @@ export function parseLog(log: ServerLog, logs: ParsedLog[]): ParsedLog {
         message: message, tags: log.tags
     }
 
-    if (appendToPrevious && logs[logs.length-1] != undefined) {
-        let lastLog = logs[logs.length -1]
+    if (appendToPrevious && logs[logs.length - 1] != undefined) {
+        let lastLog = logs[logs.length - 1]
         lastLog.message = lastLog.message.concat('\n', message)
-        logs[logs.length -1] = lastLog
+        logs[logs.length - 1] = lastLog
     } else {
         logs.push(parsed)
     }
-    
+
     return parsed
 }
 

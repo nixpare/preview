@@ -2,12 +2,12 @@ import './CraftServer.css'
 
 import ServerLogs, { parseLog } from './ServerLogs';
 import { useEffect, useState } from "react";
-import { Server } from "../models/Server";
+import { Server } from "../../models/Server";
 import ServerInfo, { ServerOnlineState } from './ServerInfo';
 import ServerChat, { parseChatMessage } from './ServerChat';
 import { Updater, useImmer } from 'use-immer';
-import { Logs } from '../models/Logs';
-import { User } from '../models/User';
+import { Logs } from '../../models/Logs';
+import { User } from '../../models/User';
 import axios from 'axios';
 
 type Section = 'info' | 'chat' | 'logs'

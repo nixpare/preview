@@ -1,6 +1,6 @@
-import { ServersInfo } from '../models/Server';
 import './CraftServerList.css'
 
+import { ServersInfo } from '../../models/Server';
 import { ServerOnlineState } from './ServerInfo';
 
 export type ServerListProps = {

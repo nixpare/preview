@@ -2,10 +2,11 @@ import './ServerChat.css'
 
 import { useEffect, useState, useRef } from "react";
 import SendCommand from './SendCommand';
-import { ChatMessage, ParsedLog } from '../models/Logs';
-import { User } from '../models/User';
+import { ChatMessage, ParsedLog } from '../../models/Logs';
+import { User } from '../../models/User';
 import axios from 'axios';
-import { getProfileImage, ProfileImageType } from '../utils/ProfileImageCache';
+import { getProfileImage, ProfileImageType } from '../../utils/ProfileImageCache';
+import { InRelief } from '../UI/InRelief';
 
 type ServerChatProps = {
     serverName: string;
@@ -59,15 +60,21 @@ export default function ServerChat({ serverName, chat, show, showMessage }: Serv
     }
 
     return (
-        <div className="server-chat" style={!show ? { display: 'none' } : undefined}>
+        <div style={!show ? { display: 'none' } : undefined}>
             <div className="send-broadcast">
                 <SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
             </div>
-            <div className="chat" onScroll={onScroll} ref={serverChatEl}>
-                {chat.map(message => (
-                    <Message key={message.id} message={message} />
-                ))}
-            </div>
+            
+            <InRelief reversed>
+                <div className="server-chat">
+                    <div className="chat" onScroll={onScroll} ref={serverChatEl}>
+                        {chat.map(message => (
+                            <Message key={message.id} message={message} />
+                        ))}
+                    </div>
+                </div>
+            </InRelief>
+            
             <div className="send-message">
                 <SendCommand label="Message" sendFunc={sendMessage} />
             </div>
@@ -83,7 +90,7 @@ function Message({ message }: { message: ChatMessage }) {
                 setProfilePicture(URL.createObjectURL(image))
             });
     }, []);
-    
+
     let date = message.date.slice(message.date.indexOf('\n') + 1)
     date = date.slice(0, date.lastIndexOf(':'))
 

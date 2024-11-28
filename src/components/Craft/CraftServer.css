@@ -1,5 +1,5 @@
 .selected-server {
-	background-color: rgba(0, 0, 0, .4);
+	background-color: rgba(var(--primary-color-very-dark), .4);
 	border-radius: .4em;
 	padding: 1.4em 2em;
 	margin: 1em 0;

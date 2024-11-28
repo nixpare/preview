@@ -1,5 +1,5 @@
 import './Navbar.css'
-import logo from '../img/icon.png'
+import logo from '../../img/icon.png'
 
 export type NavbarProps = {
     showLogoutButton: boolean;

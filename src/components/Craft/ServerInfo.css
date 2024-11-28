@@ -25,17 +25,8 @@
 .server-info .connect button {
 	font-size: 1em;
 	border: 0;
-	background-color: transparent;
-	box-shadow: 0 0 .6em rgba(var(--primary-color-light), .4),
-		inset 0 0 .4em rgba(var(--primary-color-light), .2);
 	padding: .8em;
 	transition: box-shadow .3s, font-size .3s;
-}
-.server-info .start-stop-buttons button:active,
-.server-info .connect button:active {
-	font-size: .95em;
-	box-shadow: 0 0 .4em rgba(0, 0, 0, .8),
-		inset 0 0 .6em rgba(var(--primary-color-light), .4);
 }
 
 .server-info .start-stop-buttons button {
