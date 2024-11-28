@@ -109,7 +109,6 @@ input {
   border-radius: .4em;
   padding: 1em 1.4em;
   min-width: 30ch;
-  appearance: none;
 }
 input::placeholder {
   color: rgba(255, 255, 255, .5);

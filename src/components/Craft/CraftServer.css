@@ -34,7 +34,7 @@
 
 .selected-server .sections-selector {
 	display: flex;
-	width: 60%;
+	width: 100%;
 	max-width: 600px;
 	background-color: rgba(var(--primary-color-dark), 1);
 	margin: 1em 0;
@@ -69,4 +69,10 @@
 
 .selected-server .sections > * {
 	height: 100%;
+}
+
+@media (max-width: 500px) {
+	.selected-server .sections {
+		width: 100%;
+	}
 }

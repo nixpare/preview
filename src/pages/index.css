@@ -24,3 +24,9 @@
 	justify-content: center;
 	gap: 2em;
 }
+
+@media (max-width: 1250px) {
+  .servers {
+	font-size: .9em;
+  }
+}

@@ -115,3 +115,9 @@
 	margin-bottom: 0;
 	padding: .2em .6em;
 }
+
+@media (max-width: 500px) {
+	.server-logs {
+		max-height: calc(100% - 10em);
+	}
+}

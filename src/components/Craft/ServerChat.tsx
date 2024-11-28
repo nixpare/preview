@@ -17,17 +17,18 @@ type ServerChatProps = {
 
 export default function ServerChat({ serverName, chat, show, showMessage }: ServerChatProps) {
     const serverChatEl = useRef<HTMLDivElement>(null);
-    const [scrollAtBottom, setScrollAtBottom] = useState(false)
+    const [scrollAtBottom, setScrollAtBottom] = useState(true)
 
     useEffect(() => {
         if (!scrollAtBottom)
             return
 
-        serverChatEl.current?.scroll({ top: serverChatEl.current.scrollHeight, behavior: 'smooth' })
-        setScrollAtBottom(true)
-    }, [chat])
+        setTimeout(() => {
+            serverChatEl.current?.scroll({ top: serverChatEl.current.scrollHeight, behavior: 'smooth' })
+        }, 100)
+    }, [show, chat])
 
-    const onScroll = (ev: React.UIEvent<HTMLDivElement>) => {
+    const onChatScroll = (ev: React.UIEvent<HTMLDivElement>) => {
         if (ev.currentTarget.scrollTop + ev.currentTarget.clientHeight < ev.currentTarget.scrollHeight) {
             setScrollAtBottom(false)
         } else {
@@ -65,13 +66,11 @@ export default function ServerChat({ serverName, chat, show, showMessage }: Serv
                 <SendCommand label="Broadcast Message" sendFunc={sendBroadcast} />
             </div>
             
-            <InRelief reversed>
-                <div className="server-chat">
-                    <div className="chat" onScroll={onScroll} ref={serverChatEl}>
-                        {chat.map(message => (
-                            <Message key={message.id} message={message} />
-                        ))}
-                    </div>
+            <InRelief reversed className="server-chat" onScroll={onChatScroll} innerRef={serverChatEl}>
+                <div className="chat">
+                    {chat.map(message => (
+                        <Message key={message.id} message={message} />
+                    ))}
                 </div>
             </InRelief>
             

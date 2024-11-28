@@ -19,9 +19,10 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
         if (!scrollAtBottom)
             return
 
-        serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
-        setScrollAtBottom(true)
-    }, [logs])
+        setTimeout(() => {
+            serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
+        }, 100)
+    }, [show, logs])
 
     const onLogsScroll = (ev: React.UIEvent<HTMLDivElement>) => {
         if (ev.currentTarget.scrollTop + ev.currentTarget.clientHeight < ev.currentTarget.scrollHeight) {

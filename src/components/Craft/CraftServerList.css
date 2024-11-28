@@ -78,3 +78,9 @@
 .servers-list.aside .server-entry .server-state-descr {
 	display: none;
 }
+
+@media (max-width: 900px) {
+	.servers-list.aside {
+		display: none;
+	}
+}
