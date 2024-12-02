@@ -119,13 +119,13 @@ function PlayerTag({ name }: PlayerTagProps) {
 			});
 	}, [switchProfile]);
 
-	const onHover = () => {
+	const onHoverOrClick = () => {
 		setSwitchProfile(!switchProfile)
 	}
 
 	return (
 		<InRelief hoverable>
-			<div className="player-tag" onMouseEnter={onHover}>
+			<div className="player-tag" onClick={onHoverOrClick} onMouseEnter={onHoverOrClick}>
 				{profilePicture && <img src={profilePicture} />}
 				<div>{name}</div>
 			</div>
