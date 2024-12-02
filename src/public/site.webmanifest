@@ -30,5 +30,5 @@
   ],
   "theme_color": "#003566",
   "background_color": "#001d3d",
-  "display": "fullscreen"
+  "display": "minimal-ui"
 }
