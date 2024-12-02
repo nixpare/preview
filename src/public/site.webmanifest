@@ -28,8 +28,7 @@
       "purpose": "any"
     }
   ],
-  "theme_color": "#ffc300",
+  "theme_color": "#003566",
   "background_color": "#001d3d",
-  "display": "fullscreen",
-  "display_override": ["minimal-ui", "standalone"]
+  "display": "fullscreen"
 }

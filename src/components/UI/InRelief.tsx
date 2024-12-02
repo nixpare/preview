@@ -5,13 +5,14 @@ import { DetailedHTMLProps, HTMLAttributes, MouseEvent, RefObject, useState } fr
 export type InReliefProps = {
 	children: React.ReactElement
 	reversed?: boolean
+	flat?: boolean
 	hoverable?: boolean
 	clickable?: boolean
 	disabled?: boolean
 	innerRef?: RefObject<HTMLDivElement>
 } & DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>
 
-export function InRelief({ children, reversed, hoverable, clickable, disabled, innerRef, className, onClick, ...props }: InReliefProps) {
+export function InRelief({ children, reversed, flat, hoverable, clickable, disabled, innerRef, className, onClick, ...props }: InReliefProps) {
 	const [clicked, setClicked] = useState(false)
 	const [runningTimeout, setRunningTimeout] = useState<NodeJS.Timeout | null>(null)
 
@@ -31,9 +32,19 @@ export function InRelief({ children, reversed, hoverable, clickable, disabled, i
 		}, 300))
 	}
 
+	var classList = ['in-relief' ]
+
+	if (reversed) classList.push('reversed')
+	if (flat) classList.push('flat')
+	if (hoverable) classList.push('hoverable')
+	if (clickable) classList.push('clickable')
+	if (clicked) classList.push('active')
+	if (disabled) classList.push('disabled')
+	if (className) classList.push(className)
+
 	return (
 		<div
-			className={`in-relief ${reversed ? 'reverse' : ''} ${hoverable ? 'hover' : ''} ${clickable ? 'clickable' : ''} ${clicked ? 'active' : ''} ${disabled ? 'disabled' : ''} ${className ?? ''}`}
+			className={classList.join(' ')}
 			onClick={onClickInRelief}
 			ref={innerRef}
 			{...props}

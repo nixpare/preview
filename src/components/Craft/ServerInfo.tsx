@@ -53,12 +53,12 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 	return (
 		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
 			<div className="start-stop-buttons">
-				<InRelief clickable disabled={server.running}>
+				<InRelief clickable reversed={server.running} disabled={server.running}>
 					<button onClick={startServer} disabled={server.running}>
 						<div>Start</div>
 					</button>
 				</InRelief>
-				<InRelief clickable disabled={!server.running}>
+				<InRelief clickable reversed={!server.running} disabled={!server.running}>
 					<button onClick={stopServer} disabled={!server.running}>
 						<div>Stop</div>
 					</button>
