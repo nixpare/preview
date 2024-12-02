@@ -1,0 +1,33 @@
+.send-command {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1em;
+	padding: 1em 0;
+}
+
+.send-command .input-wrapper {
+	display: flex;
+	align-items: center;
+	border-radius: .4em;
+}
+
+.send-command .input-wrapper>.in-relief {
+	padding: 0;
+}
+
+.send-command input {
+	z-index: 200;
+	outline: none;
+	background-color: transparent;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.send-command button {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	z-index: 100;
+	padding: .8em 1em;
+	background-color: rgb(var(--secondary-color));
+}

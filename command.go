@@ -3,7 +3,6 @@ package craft
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/nixpare/server/v3/commands"
 )
@@ -38,7 +37,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "kill":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -50,7 +49,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "send":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -62,7 +61,7 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 			}
 		case "connect":
 			name := args[1]
-			srv, ok := msm.servers[name]
+			srv, ok := msm.Servers[name]
 			if !ok {
 				err = fmt.Errorf("server %s not found", name)
 				break
@@ -91,61 +90,21 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 	}
 }
 
-func taskCheckUsers(msm *McServerManager, alreadyOffline *bool) error {
-	msm.mutex.Lock()
-	defer msm.mutex.Unlock()
-
-	now := time.Now()
-	for _, srv := range msm.servers {
-		var playing bool
-
-		for userName, user := range msm.users {
-			if user.server != srv {
-				continue
-			}
-
-			if now.After(user.t.Add(time.Minute * 10)) {
-				defer func(key string, value *McUser) {
-					delete(msm.users, key)
-					if value.conn != nil {
-						value.conn.Close()
-					}
-				}(userName, user)
-			} else if user.conn != nil {
-				playing = true
-			}
-		}
-
-		if !playing && srv.IsRunning() {
-			if *alreadyOffline {
-				*alreadyOffline = false
-				return srv.Stop(true)
-			} else {
-				*alreadyOffline = true
-			}
-		} else {
-			*alreadyOffline = false
-		}
-	}
-
-	return nil
-}
-
 func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 	sb := strings.Builder{}
 	sb.WriteString("\nNixcraft Server Status:\n")
 
 	sb.WriteString("\nInstalled servers: [ ")
-	for srvName := range msm.servers {
+	for srvName := range msm.Servers {
 		sb.WriteString("\n        ")
 		sb.WriteString(srvName)
 	}
-	if len(msm.servers) != 0 {
+	if len(msm.Servers) != 0 {
 		sb.WriteString("\n")
 	}
 	sb.WriteString("]\n")
 
-	for srvName, srv := range msm.servers {
+	for srvName, srv := range msm.Servers {
 		sb.WriteString("\n  - ")
 		sb.WriteString(srvName)
 
@@ -155,19 +114,19 @@ func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 		}
 		sb.WriteString("        Online\n")
 
-		msm.mutex.RLock()
-		players := srv.getOnlinePlayersNoLock()
-		msm.mutex.RUnlock()
+		srv.m.RLock()
 
 		sb.WriteString("\nOnline Players: [ ")
-		for _, p := range players {
+		for _, p := range srv.Players {
 			sb.WriteString("\n            ")
-			sb.WriteString(p)
+			sb.WriteString(p.Name)
 		}
-		if len(players) != 0 {
+		if len(srv.Players) != 0 {
 			sb.WriteString("\n")
 		}
 		sb.WriteString("]\n")
+
+		srv.m.RUnlock()
 	}
 
 	return sc.WriteOutput(sb.String())

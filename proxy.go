@@ -5,20 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"time"
 
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/server/v3"
 )
-
-type McUser struct {
-	name string
-	ip   string
-
-	server *McServer
-	conn   net.Conn
-	t      time.Time
-}
 
 func startProxy(router *server.Router, msm *McServerManager) error {
 	tcpSrv, err := router.NewTCPServer("", mc_public_port, false)
@@ -45,8 +35,9 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	packetID := buf1[0]
 
 	switch packetID {
-	case 0x12 /* default */, 0x18 /* fabric client */, 0x10 /* multimc client */:
+	case 0x12 /* vanilla */, 0x18 /* modrinth */, 0x10 /* multimc */ :
 		packetType := buf1[n-1]
+		msm.Logger.Debug(packetType, buf1[:n], string(buf1[:n]))
 		switch packetType {
 		case 0x1: // old ping
 			handlePingRequest(srv, conn, addr, buf1[:n])
@@ -54,6 +45,7 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 		case 0x2: // login start
 		default:
 			srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Unknown packetType: %d", packetType)
+			return
 		}
 
 	case 0xFE: // new ping
@@ -82,9 +74,6 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 		return
 	}
 
-	user.conn = conn
-	defer func() { user.conn = nil }()
-
 	serverAddr := fmt.Sprintf("%s:%d", "127.0.0.1", mcServer.port)
 	target, err := net.ResolveTCPAddr("tcp", serverAddr)
 	if err != nil {
@@ -112,6 +101,14 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	}
 	buf2 = nil
 
+	user.conn = conn
+	mcServer.playerConnected(user)
+
+	defer func() {
+		user.conn = nil
+		mcServer.playerDisconnected(user)
+	}()
+
 	server.TCPPipe(conn, proxy)
 }
 
@@ -124,7 +121,7 @@ func acceptConnection(msm *McServerManager, userName string, addr string) (*McUs
 		return nil, nil, false
 	}
 
-	if addr != user.ip || user.conn != nil {
+	if addr != user.IP || user.conn != nil {
 		return nil, nil, false
 	}
 

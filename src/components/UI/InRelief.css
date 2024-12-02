@@ -1,0 +1,66 @@
+.in-relief {
+	padding: .5em;
+}
+
+.in-relief.clickable:not(.disabled) {
+	cursor: pointer;
+}
+
+.in-relief>* {
+	border: 0;
+	background: transparent;
+	box-shadow: .3em .1em .5em #0004,
+		0em 0em .5em #0002,
+		inset 0 0 0 #0000,
+		inset 0 0 0 #0000;
+	transition: ease-in-out .3s;
+}
+
+.in-relief.reversed>*,
+.in-relief.active>*,
+.in-relief.hoverable:hover>* {
+	box-shadow: 0 0 0 #0000,
+		0 0 0 #0000,
+		inset .3em .1em .5em #0004,
+		inset 0em 0em .5em #0002;
+}
+
+.in-relief.reversed.hoverable:hover>* {
+	box-shadow: .3em .1em .5em #0004,
+		0em 0em .5em #0002,
+		inset 0 0 0 #0000,
+		inset 0 0 0 #0000;
+}
+
+.in-relief:not(.hoverable):not(.disabled).clickable:hover>* {
+	box-shadow: .3em .1em .5em #0004,
+		0em 0em .5em #fff1,
+		inset 0 0 0 #0000,
+		inset 0 0 0 #0000;
+}
+
+.in-relief>*>* {
+	transition: transform ease-in-out .3s;
+}
+
+.in-relief:not(.reversed)>*>*,
+.in-relief.reversed.active>*>*,
+.in-relief.reversed.hoverable:hover>*>* {
+	transform: translateY(0);
+}
+
+.in-relief.reversed.clickable:not(.active)>*>*,
+.in-relief.active>*>*,
+.in-relief.hoverable:hover>*>* {
+	transform: translateY(.2em);
+}
+
+.in-relief.flat:not(.active)>* {
+	box-shadow: 0 0 0 #0000,
+		0 0 0 #0000,
+		inset 0 0 0 #0000,
+		inset 0 0 0 #0000;
+}
+.in-relief.flat:not(.active)>*>* {
+	transform: translateY(0);
+}

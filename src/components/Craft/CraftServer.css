@@ -1,0 +1,78 @@
+.selected-server {
+	background-color: rgba(var(--primary-color-very-dark), .4);
+	border-radius: .4em;
+	padding: 1.4em 2em;
+	margin: 1em 0;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	max-width: 100%;
+	overflow: auto;
+}
+
+.selected-server .close-button {
+	font-size: 1.6em;
+	position: absolute;
+	top: .2em;
+	right: .2em;
+	background-color: transparent;
+	border: 0;
+	padding: 0 .2em;
+}
+.selected-server .close-button:hover {
+	color: #ccc;
+}
+.selected-server .close-button:active {
+	color: rgb(var(--primary-color-light));
+}
+
+.selected-server h1 {
+	color: rgb(var(--secondary-color));
+}
+
+.selected-server .sections-selector {
+	display: flex;
+	width: 100%;
+	max-width: 600px;
+	background-color: rgba(var(--primary-color-dark), 1);
+	margin: 1em 0;
+	border-top-left-radius: .4em;
+	border-top-right-radius: .4em;
+}
+
+.selected-server .sections-selector > * {
+	padding: .2em 2em;
+	width: 50%;
+	border-top-left-radius: .4em;
+	border-top-right-radius: .4em;
+	box-shadow: 0 0 0 #0000;
+	transition: box-shadow .3s;
+}
+
+.selected-server .sections-selector>*.selected {
+	background-color: rgba(var(--primary-color), 1);
+}
+
+.selected-server .sections-selector>:not(.selected) {
+	cursor: pointer;
+}
+.selected-server .sections-selector>:not(.selected):hover {
+	box-shadow: 0 0 1em rgba(var(--primary-color-light), .4);
+}
+
+.selected-server .sections {
+	max-width: 100%;
+	overflow: auto;
+}
+
+.selected-server .sections > * {
+	height: 100%;
+}
+
+@media (max-width: 500px) {
+	.selected-server .sections {
+		width: 100%;
+	}
+}

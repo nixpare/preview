@@ -1,0 +1,81 @@
+.server-info {
+	padding: 1em;
+}
+
+.server-info .connected-check {
+	color: green;
+	margin-left: .6em;
+}
+
+.server-info .start-stop-buttons {
+	display: flex;
+	gap: 1em;
+	justify-content: center;
+}
+
+.server-info .connect {
+	margin: 1em 0;
+}
+
+.server-info .connect > div {
+	padding: .6em;
+}
+
+.server-info .start-stop-buttons button,
+.server-info .connect button {
+	font-size: 1em;
+	border: 0;
+	padding: .8em;
+	transition: box-shadow .3s, font-size .3s;
+}
+
+.server-info .start-stop-buttons button {
+	width: 9ch;
+}
+.server-info .connect button {
+	width: 12ch;
+}
+
+.server-state {
+	display: flex;
+	align-items: center;
+	gap: .5em;
+}
+
+.server-state .server-state-dot {
+	width: .6em;
+	height: .6em;
+	background-color: red;
+	border-radius: 50%;
+}
+
+.server-state.online .server-state-dot {
+	background-color: green;
+}
+
+.server-state .online-players {
+	margin-left: 1em;
+	display: flex;
+	gap: .6em;
+	align-items: center;
+}
+
+.online-players {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2em;
+	flex-wrap: wrap;
+}
+
+.player-tag {
+	padding: 1em 3em;
+	border-radius: 1.4em;
+	display: flex;
+	align-items: center;
+	gap: 1em;
+}
+
+.player-tag > img {
+	height: 2em;
+}

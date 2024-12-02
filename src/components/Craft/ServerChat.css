@@ -1,0 +1,90 @@
+.server-chat {
+	max-width: 100%;
+	max-height: calc(100% - 12em);
+	min-height: 3em;
+	overflow: auto;
+}
+
+.server-chat .send-message {
+	width: 100%;
+	max-width: 50ch;
+}
+
+.server-chat .send-message input {
+	width: 100%;
+}
+
+.server-chat .chat {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: .2em;
+	border-radius: 1em;
+	padding: 1em;
+}
+
+.server-chat .chat .message {
+	font-size: .9em;
+	padding: .4em 1em;
+	min-width: 20ch;
+	background-color: rgb(var(--primary-color));
+	border-radius: 1em;
+	text-align: left;
+	align-self: start;
+}
+
+.server-chat .chat .message.self {
+	background-color: rgb(var(--primary-color-light));
+	color: #000;
+	text-align: right;
+	align-self: end;
+}
+
+.server-chat .chat .message .from {
+	font-weight: bold;
+	color: rgba(var(--secondary-color), 1);
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+}
+.server-chat .chat .message.self .from {
+	justify-content: flex-end;
+}
+
+.server-chat .chat .message .from img {
+	height: 1.4em;
+	margin-right: .2em;
+}
+
+.server-chat .chat .message .date {
+	font-size: .7em;
+	text-align: right;
+}
+.server-chat .chat .message.self .date {
+	text-align: left;
+}
+
+@media (max-width: 500px) {
+	.server-chat {
+		max-height: calc(100% - 15em);
+	}
+
+	.send-command {
+		flex-direction: column;
+	}
+
+	.send-command > .in-relief,
+	.send-command .input-wrapper {
+		width: 100%;
+	}
+
+	.send-command input {
+		font-size: .8em;
+		width: 100%;
+		min-width: unset;
+	}
+
+	.send-message .send-command h5 {
+		display: none;
+	}
+}

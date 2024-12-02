@@ -1,0 +1,86 @@
+.servers-list.aside {
+	width: unset;
+}
+
+.servers-list > h3 {
+	font-size: 2em;
+}
+
+.servers-list > ul {
+	list-style: none;
+	width: 100%;
+	margin: 1em 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 3em;
+	max-width: 70vw;
+}
+
+.servers-list.aside>h3 {
+	display: none;
+}
+
+.servers-list.aside > ul {
+	width: min-content;
+	gap: 1.4em;
+}
+
+.servers-list.aside {
+	flex-direction: column;
+	justify-content: unset;
+}
+
+.server-entry {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 2em;
+	background-color: rgba(var(--primary-color-very-dark), .4);
+	border-radius: .4em;
+	padding: 2em 3em;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 0 0 #0000;
+	transition: box-shadow .3s;
+}
+.server-entry:hover {
+	box-shadow: 0 0 1em rgba(var(--secondary-color-light), .4);
+}
+.servers-list.aside .server-entry {
+	width: -webkit-fill-available;
+	padding: 1.5em 2em;
+}
+
+.server-entry > div {
+	display: flex;
+	flex-direction: column;
+	gap: 1em;
+}
+
+.server-entry .server-name {
+	font-size: 1.3em;
+	color: rgb(var(--secondary-color));
+	font-weight: bold;
+}
+
+.server-entry .server-type {
+	font-size: .8em;
+	color: #aaa;
+}
+
+.servers-list:not(.aside) .server-entry > i {
+	opacity: 0;
+}
+
+.servers-list.aside .server-entry .server-state-descr {
+	display: none;
+}
+
+@media (max-width: 900px) {
+	.servers-list.aside {
+		display: none;
+	}
+}
