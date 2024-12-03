@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -113,7 +115,7 @@ func Nixcraft() http.Handler {
 	n := nix.New(
 		nix.CookieManagerOption(cookieManager),
 		nix.EnableLoggingOption(),
-		nix.LoggerOption(logger.DefaultLogger),
+		nix.LoggerOption(MC.Logger.Clone(nil, true, "http")),
 		nix.EnableErrorCaptureOption(),
 		nix.EnableRecoveryOption(),
 		nix.ConnectToMainOption(),
@@ -153,6 +155,7 @@ func Nixcraft() http.Handler {
 	// GET
 	mux.HandleFunc("GET /logout", n.Handle(getLogout))
 	mux.HandleFunc("GET /profile/{username}", n.Handle(getProfilePicture))
+	mux.HandleFunc("GET /map/{server}/", n.Handle(getServerMapViewAssets))
 
 	// POST
 	mux.HandleFunc("POST /", n.Handle(func(ctx *nix.Context) {
@@ -231,6 +234,12 @@ func (i ImageType) ToURL() string {
 }
 
 func getProfilePicture(ctx *nix.Context) {
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
+		return
+	}
+
 	username := ctx.R().PathValue("username")
 	if username == "" {
 		ctx.Error(http.StatusBadRequest, "Invalid request", "missing username")
@@ -262,6 +271,52 @@ func getProfilePicture(ctx *nix.Context) {
 		ctx.Error(http.StatusInternalServerError, "Unable to provide profile picture", err)
 		return
 	}
+}
+
+func getServerMapViewAssets(ctx *nix.Context) {
+	srvName := ctx.R().PathValue("server")
+
+	_, err := trustUser(ctx)
+	if err != nil {
+		handleTrustUserResult(ctx, err)
+		return
+	}
+
+	MC.mutex.RLock()
+	srv, ok := MC.Servers[srvName]
+	MC.mutex.RUnlock()
+	if !ok {
+		ctx.Error(http.StatusNotFound, fmt.Sprintf("Server %s not found", srvName))
+		return
+	}
+
+	bluemapAssetsPath := filepath.Join(srv.javaExec.wd, "bluemap/web")
+	info, err := os.Stat(bluemapAssetsPath)
+	if err != nil || !info.IsDir() {
+		ctx.Error(http.StatusNotFound, fmt.Sprintf("Server %s does not support Bluemap plugin", srvName))
+		return
+	}
+
+	bluemapAssetsDir := os.DirFS(bluemapAssetsPath)
+	requestPath := strings.Replace(ctx.RequestPath(), "/map/" + srvName, "", 1)
+
+	if requestPath[0] == '/' {
+		requestPath = requestPath[1:]
+	}
+
+	if requestPath == "" {
+		requestPath = "index.html"
+	} else {
+		ctx.DisableErrorCapture()
+		ctx.DisableLogging()
+	}
+
+	if _, err := bluemapAssetsDir.Open(requestPath + ".gz"); err == nil {
+		requestPath += ".gz"
+		ctx.Header().Set("Content-Encoding", "gzip")
+	}
+
+	ctx.ServeFileFS(bluemapAssetsDir, requestPath)
 }
 
 //

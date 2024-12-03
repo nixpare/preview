@@ -28,8 +28,17 @@
 	color: rgb(var(--primary-color-light));
 }
 
-.selected-server h1 {
+.selected-server .server-title {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1em;
 	color: rgb(var(--secondary-color));
+}
+
+.selected-server .server-title a {
+	cursor: pointer;
+	color: inherit !important;
 }
 
 .selected-server .sections-selector {

@@ -52,7 +52,11 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
 
     return (
         <div className="selected-server">
-            <h1>{server.name}</h1>
+            <div className="server-title">
+                <h1>{server.name}</h1>
+                <a href={`/map/${serverName}`} target='_self'><i className="fa-solid fa-map"></i></a>
+            </div>
+            
             <button className="close-button" onClick={closeServer}>
                 <i className="fa-solid fa-xmark"></i>
             </button>
