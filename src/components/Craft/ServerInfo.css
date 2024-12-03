@@ -2,7 +2,8 @@
 	padding: 1em;
 }
 
-.server-info .start-stop-buttons {
+.server-info .start-stop-buttons,
+.server-info .connect {
 	display: flex;
 	gap: 1em;
 	justify-content: center;
@@ -20,7 +21,7 @@
 .server-info .connect button {
 	font-size: 1em;
 	border: 0;
-	padding: .8em;
+	padding: .8em 1.6em;
 	transition: box-shadow .3s, font-size .3s;
 }
 
