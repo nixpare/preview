@@ -67,10 +67,11 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 			{<div className="connect">
 				<InRelief clickable>
 					<button onClick={connectToServer}>
-					<div>{user.server != server.name ? <>Connect</> : <>
-						Connected
-						<i className="fa-solid fa-circle-check connected-check"></i>
-					</>}</div>
+						{user.server != server.name ? <div>Connect</div> : <>
+							<div>Connected</div>
+							<i className="fa-solid fa-circle-check connected-check"></i>
+						</>}
+						<div></div>
 					</button>
 				</InRelief>
 			</div>}

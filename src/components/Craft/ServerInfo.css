@@ -2,11 +2,6 @@
 	padding: 1em;
 }
 
-.server-info .connected-check {
-	color: green;
-	margin-left: .6em;
-}
-
 .server-info .start-stop-buttons {
 	display: flex;
 	gap: 1em;
@@ -30,10 +25,16 @@
 }
 
 .server-info .start-stop-buttons button {
-	width: 9ch;
+	min-width: 9ch;
 }
 .server-info .connect button {
-	width: 12ch;
+	min-width: 12ch;
+	display: flex;
+}
+
+.server-info .connect button > i {
+	color: green;
+	margin-left: .6em;
 }
 
 .server-state {
