@@ -65,16 +65,14 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 				</InRelief>
 			</div>
 			{<div className="connect">
-				{user.server != server.name ? <>
-					<InRelief clickable>
-						<button onClick={connectToServer}>
-							<div>Connect</div>
-						</button>
-					</InRelief>
-				</> : <div>
-					Connected
-					<i className="fa-solid fa-circle-check connected-check"></i>
-				</div>}
+				<InRelief clickable>
+					<button onClick={connectToServer}>
+					<div>{user.server != server.name ? <>Connect</> : <>
+						Connected
+						<i className="fa-solid fa-circle-check connected-check"></i>
+					</>}</div>
+					</button>
+				</InRelief>
 			</div>}
 			<div className="online-players">
 				{server.running && Object.values(server.players || {}).map(player => {
