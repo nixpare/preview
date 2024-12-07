@@ -77,7 +77,7 @@ func (msm *McServerManager) loadServers() error {
 			}
 			proc.InheritConsole(false)
 				
-			msm.Servers[e.Name()] = msm.NewMcServer(&serverJSON, proc, port)
+			msm.Servers[serverJSON.Name] = msm.NewMcServer(&serverJSON, proc, port)
 			break
 		}
 	}
