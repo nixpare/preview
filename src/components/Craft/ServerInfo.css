@@ -30,10 +30,9 @@
 }
 .server-info .connect button {
 	min-width: 12ch;
-	display: flex;
 }
 
-.server-info .connect button > i {
+.server-info .connect button i {
 	color: green;
 	margin-left: .6em;
 }
@@ -55,7 +54,7 @@
 	background-color: green;
 }
 
-.server-state .online-players {
+.server-state .player-count {
 	margin-left: 1em;
 	display: flex;
 	gap: .6em;
@@ -68,6 +67,14 @@
 	justify-content: center;
 	gap: 2em;
 	flex-wrap: wrap;
+}
+
+.server-type {
+	font-size: .8em;
+	color: #aaa;
+	display: flex;
+	align-items: center;
+	gap: .6em;
 }
 
 .player-tag {

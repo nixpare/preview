@@ -60,10 +60,10 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 
 			now := time.Now()
 			for _, srv := range MC.Servers {
-				srv.m.RLock()
+				srv.mutex.RLock()
 				isRunning := srv.IsRunning()
 				players := len(srv.Players)
-				srv.m.RUnlock()
+				srv.mutex.RUnlock()
 
 				if !isRunning || players != 0 {
 					continue
@@ -71,7 +71,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 
 				if now.After(srv.lastDisconnect.Add(time.Minute * 10)) {
 					srv.serverLog.Printf(logger.LOG_LEVEL_INFO, "Shutting down server for inactivity")
-					
+
 					err := srv.Stop()
 					if err != nil {
 						t.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error shutting down Minecraft Server %s: %v", srv.Name, err)
@@ -81,7 +81,7 @@ func CraftInit(router *server.Router, commandServers []*commands.CommandServer) 
 
 			return nil
 		}
-		
+
 		cleanupF = func(_ *server.Task) error {
 			return MC.StopAll()
 		}
@@ -224,9 +224,10 @@ func getLogout(ctx *nix.Context) {
 }
 
 type ImageType string
+
 const (
 	ARMOR_BUST ImageType = "armor_bust"
-	HEADHELM ImageType = "headhelm"
+	HEADHELM   ImageType = "headhelm"
 )
 
 func (i ImageType) ToURL() string {
@@ -258,7 +259,6 @@ func getProfilePicture(ctx *nix.Context) {
 		urlPath = ARMOR_BUST.ToURL()
 	}
 
-
 	resp, err := http.Get(fmt.Sprintf("https://mineskin.eu/%s/%s", urlPath, username))
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "Unable to fetch profile picture", err)
@@ -282,15 +282,13 @@ func getServerMapViewAssets(ctx *nix.Context) {
 		return
 	}
 
-	MC.mutex.RLock()
-	srv, ok := MC.Servers[srvName]
-	MC.mutex.RUnlock()
+	srv, ok := MC.GetServer(srvName)
 	if !ok {
 		ctx.Error(http.StatusNotFound, fmt.Sprintf("Server %s not found", srvName))
 		return
 	}
 
-	bluemapAssetsPath := filepath.Join(srv.javaExec.wd, "bluemap/web")
+	bluemapAssetsPath := filepath.Join(srv.process.Exec.Dir, "bluemap/web")
 	info, err := os.Stat(bluemapAssetsPath)
 	if err != nil || !info.IsDir() {
 		ctx.Error(http.StatusNotFound, fmt.Sprintf("Server %s does not support Bluemap plugin", srvName))
@@ -298,7 +296,7 @@ func getServerMapViewAssets(ctx *nix.Context) {
 	}
 
 	bluemapAssetsDir := os.DirFS(bluemapAssetsPath)
-	requestPath := strings.Replace(ctx.RequestPath(), "/map/" + srvName, "", 1)
+	requestPath := strings.Replace(ctx.RequestPath(), "/map/"+srvName, "", 1)
 
 	if requestPath[0] == '/' {
 		requestPath = requestPath[1:]
@@ -410,10 +408,8 @@ func postGeneralMessage(ctx *nix.Context, buildCmd func(user *McUser, message st
 
 	user = u.user
 
-	MC.mutex.RLock()
 	var found bool
-	srv, found = MC.Servers[srvName]
-	MC.mutex.RUnlock()
+	srv, found = MC.GetServer(srvName)
 	if !found {
 		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
 		return
@@ -570,22 +566,19 @@ func wsServerConsole(ctx *nix.Context) {
 
 	srvName := ctx.R().PathValue("server")
 
-	MC.mutex.RLock()
-	srv, ok := MC.Servers[srvName]
-	MC.mutex.RUnlock()
-
+	srv, ok := MC.GetServer(srvName)
 	if !ok {
 		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
 		return
 	}
 
-	srv.m.RLock()
-	log := srv.log
-	serverLog := srv.serverLog
-	userLog := srv.userLog
-	srv.m.RUnlock()
+	srv.mutex.RLock()
+	l := srv.log
+	serverLogger := srv.serverLog
+	userLogger := srv.userLog
+	srv.mutex.RUnlock()
 
-	if log == nil {
+	if l == nil {
 		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s was never started", srvName))
 		return
 	}
@@ -603,9 +596,9 @@ func wsServerConsole(ctx *nix.Context) {
 	}
 	defer conn.CloseNow()
 
-	prevLogsN, ch := log.ListenForLogs(20)
+	prevLogsN, ch := l.ListenForLogs(20)
 	defer ch.Unregister()
-	prevLogs := log.GetLogs(0, prevLogsN)
+	prevLogs := l.GetLogs(0, prevLogsN)
 
 	for _, log := range prevLogs {
 		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())
@@ -633,10 +626,10 @@ func wsServerConsole(ctx *nix.Context) {
 
 			cmd := string(b)
 
-			userLog.Printf(logger.LOG_LEVEL_WARNING, "User %s sent command: <%s>", user.Username, cmd)
+			userLogger.Printf(logger.LOG_LEVEL_WARNING, "User %s sent command: <%s>", user.Username, cmd)
 			err = srv.SendInput(cmd)
 			if err != nil {
-				serverLog.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.Name, cmd, err)
+				serverLogger.Printf(logger.LOG_LEVEL_ERROR, "User %s sent command <%s> but an error occurred: %v", user.user.Name, cmd, err)
 			}
 		}
 	}()
@@ -648,7 +641,7 @@ func wsServerConsole(ctx *nix.Context) {
 	loop:
 		for {
 			select {
-			case log, ok := <- logCh:
+			case log, ok := <-logCh:
 				if !ok {
 					break loop
 				}
@@ -659,7 +652,7 @@ func wsServerConsole(ctx *nix.Context) {
 					ctx.AddInteralMessage(fmt.Sprintf("websocket: write error: %v", err))
 					return
 				}
-			case <- exitC:
+			case <-exitC:
 				break loop
 			}
 		}

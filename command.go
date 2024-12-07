@@ -91,6 +91,9 @@ func mcCommand(msm *McServerManager) commands.ServerCommandHandler {
 }
 
 func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
+	msm.mutex.RLock()
+	defer msm.mutex.RUnlock()
+
 	sb := strings.Builder{}
 	sb.WriteString("\nNixcraft Server Status:\n")
 
@@ -114,7 +117,7 @@ func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 		}
 		sb.WriteString("        Online\n")
 
-		srv.m.RLock()
+		srv.mutex.RLock()
 
 		sb.WriteString("\nOnline Players: [ ")
 		for _, p := range srv.Players {
@@ -126,7 +129,7 @@ func mcStatus(msm *McServerManager, sc *commands.ServerConn) error {
 		}
 		sb.WriteString("]\n")
 
-		srv.m.RUnlock()
+		srv.mutex.RUnlock()
 	}
 
 	return sc.WriteOutput(sb.String())

@@ -1,7 +1,7 @@
 import './CraftServerList.css'
 
 import { ServersInfo } from '../../models/Server';
-import { ServerOnlineState } from './ServerInfo';
+import { ServerOnlineState, ServerType } from './ServerInfo';
 
 export type ServerListProps = {
   servers: ServersInfo
@@ -26,9 +26,7 @@ export default function CraftServerList({ servers, aside, setCurrentServer }: Se
                   <div className="server-name">
                     {server.name}
                   </div>
-                  <div className="server-type">
-                    Vanilla
-                  </div>
+                  <ServerType server={server} />
                 </div>
                 <ServerOnlineState server={server} />
               </div>

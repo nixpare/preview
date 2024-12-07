@@ -2,8 +2,8 @@ import './CraftServer.css'
 
 import ServerLogs, { parseLog } from './ServerLogs';
 import { useEffect, useState } from "react";
-import { Server } from "../../models/Server";
-import ServerInfo, { ServerOnlineState } from './ServerInfo';
+import { PublicServer } from "../../models/Server";
+import ServerInfo, { ServerOnlineState, ServerType } from './ServerInfo';
 import ServerChat, { parseChatMessage } from './ServerChat';
 import { Updater, useImmer } from 'use-immer';
 import { Logs } from '../../models/Logs';
@@ -14,7 +14,7 @@ type Section = 'info' | 'chat' | 'logs'
 
 export type ServerProps = {
     user: User;
-    server: Server;
+    server: PublicServer;
     serverName: string;
     closeServer: () => void;
     showMessage: (message: string) => void;
@@ -52,11 +52,15 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
 
     return (
         <div className="selected-server">
-            <div className="server-title">
-                <h1>{server.name}</h1>
-                <a href={`/map/${serverName}`} target='_self'><i className="fa-solid fa-map"></i></a>
+            <div>
+                <div className="server-title">
+                    <h1>{server.name}</h1>
+                    <a href={`/map/${serverName}`} target='_self'><i className="fa-solid fa-map"></i></a>
+                </div>
+                <ServerType server={server} />
             </div>
             
+
             <button className="close-button" onClick={closeServer}>
                 <i className="fa-solid fa-xmark"></i>
             </button>

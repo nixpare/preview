@@ -1,7 +1,7 @@
 import './ServerInfo.css'
 
 import axios, { AxiosError } from "axios";
-import { Server } from "../../models/Server";
+import { PublicServer } from "../../models/Server";
 import { User } from "../../models/User";
 import { useEffect, useState } from 'react';
 import { getProfileImage, ProfileImageType } from '../../utils/ProfileImageCache';
@@ -9,7 +9,7 @@ import { InRelief } from '../UI/InRelief';
 
 type ServerInfoProps = {
 	user: User;
-	server: Server;
+	server: PublicServer;
 	show: boolean;
 	showMessage: (message: string) => void;
 }
@@ -50,6 +50,8 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 		}
 	}
 
+	const onlinePlayers = user.server && user.server.name == server.name && user.server?.players || []
+
 	return (
 		<div className="server-info" style={!show ? { display: 'none' } : undefined}>
 			<div className="start-stop-buttons">
@@ -67,17 +69,20 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 			{<div className="connect">
 				<InRelief clickable>
 					<button onClick={connectToServer}>
-						{user.server != server.name ? <div>Connect</div> : <>
-							<div>Connected</div>
-							<i className="fa-solid fa-circle-check connected-check"></i>
-						</>}
-						<div></div>
+						{user.server && user.server.name == server.name ? (
+							<div>
+								Connected
+								<i className="fa-solid fa-circle-check connected-check"></i>
+							</div>
+						) : (
+							<div>Connect</div>
+						)}
 					</button>
 				</InRelief>
 			</div>}
 			<div className="online-players">
-				{server.running && Object.values(server.players || {}).map(player => {
-					return <PlayerTag name={player.name} key={player.name} />
+				{onlinePlayers.map(player => {
+					return <PlayerTag name={player} key={player} />
 				})}
 			</div>
 		</div>
@@ -85,7 +90,7 @@ export default function ServerInfo({ user, server, show, showMessage }: ServerIn
 }
 
 type ServerOnlineStateProps = {
-	server: Server
+	server: PublicServer
 }
 
 export function ServerOnlineState({ server }: ServerOnlineStateProps) {
@@ -95,10 +100,23 @@ export function ServerOnlineState({ server }: ServerOnlineStateProps) {
 			<div className="server-state-descr">
 				{server.running ? 'Online' : 'Offline'}
 			</div>
-			{server.running ? <div className="online-players">
+			{server.running ? <div className="player-count">
 				<i className="fa-solid fa-users"></i>
-				{Object.values(server.players ?? {}).length}
+				{server.players}
 			</div> : undefined}
+		</div>
+	)
+}
+
+type ServerTypeProps = {
+	server: PublicServer
+}
+
+export function ServerType({ server }: ServerTypeProps) {
+	return (
+		<div className="server-type">
+			<div className="version">{server.version}</div>
+			<div className="type">({server.type})</div>
 		</div>
 	)
 }

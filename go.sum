@@ -24,6 +24,8 @@ github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c h1:N7A4JCA2G
 github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c/go.mod h1:Nn5wlyECw3iJrzi0AhIWg+AJUb4PlRQVW4/3XHH1LZA=
 github.com/nixpare/broadcaster v1.2.1 h1:eit04tSQgKCBvF0lFOQKaMUdVGgIvgwkQdIhvilf+vg=
 github.com/nixpare/broadcaster v1.2.1/go.mod h1:IC56SeoQvQGqaqJ06HUN5zMlCLB2NoKNOXo2zNmsp7w=
+github.com/nixpare/broadcaster v1.3.0 h1:gIHdmXIpMNoeIzn1eYyIQ0Nkalsu2x3gZAh5/Kzdomw=
+github.com/nixpare/broadcaster v1.3.0/go.mod h1:RoPxrd/UheqkjWQ6Vtk7qAe5Zbu05YzSdVKkpPO2EUM=
 github.com/nixpare/cancelio v1.0.0 h1:yGi5yh5ajwOvLZ1o7uT2QNi77NcGA3UY7A4hPx0dhJA=
 github.com/nixpare/cancelio v1.0.0/go.mod h1:bHbyBzQPv3duHiMKqIjzyaAxVVeWhsR7geHlAKcFID0=
 github.com/nixpare/logger/v3 v3.0.4 h1:C9tRAolX41z47BdSnza/i/n05Zt19gjB92M98fART/k=
@@ -32,6 +34,8 @@ github.com/nixpare/nix v0.1.0 h1:zT+gpf/QcrVHkFgGxUadPK+NOSCQAjtF8o8nrUJZGUA=
 github.com/nixpare/nix v0.1.0/go.mod h1:elq1AoqtFj1CsCyj/1FKfJlShtb2gAmzoJ6KdC+g4qU=
 github.com/nixpare/process v1.7.0 h1:OpTba2FGRGBKTNBIkBe62G5hwkfKUhWcUy6B9M4lxMs=
 github.com/nixpare/process v1.7.0/go.mod h1:81OolzCsld+bbMG29WD3G8Cwfq5M/q3J+FBhCE9aNd4=
+github.com/nixpare/process v1.7.1 h1:XcRc8qJHtbI8Chl0MWwJT1LR9qtvRHqcG6hStKNP010=
+github.com/nixpare/process v1.7.1/go.mod h1:oRAaVWMEdZiyjYuM9u1tcPamT2Yuz1WRImgcjCE7xkE=
 github.com/nixpare/server/v3 v3.0.0-beta.6 h1:+SfdBSUf/jNb7HObL1X1FBmr9Y2c10tk8ONWAVzm4L0=
 github.com/nixpare/server/v3 v3.0.0-beta.6/go.mod h1:jqh9WHDC23EfDU99jWOBjnMa8lgdv19zdzN6wOChnuE=
 github.com/onsi/ginkgo/v2 v2.22.0 h1:Yed107/8DjTr0lKCNt7Dn8yQ6ybuDRQoMGrNFKzMfHg=

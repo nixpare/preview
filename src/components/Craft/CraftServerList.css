@@ -66,9 +66,8 @@
 	font-weight: bold;
 }
 
-.server-entry .server-type {
-	font-size: .8em;
-	color: #aaa;
+.server-entry .server-type > .type {
+	display: none;
 }
 
 .servers-list:not(.aside) .server-entry > i {
