@@ -41,6 +41,10 @@
 	color: inherit !important;
 }
 
+.selected-server .server-type {
+	justify-content: center;
+}
+
 .selected-server .sections-selector {
 	display: flex;
 	width: 100%;
