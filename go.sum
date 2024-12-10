@@ -36,6 +36,8 @@ github.com/nixpare/process v1.7.0 h1:OpTba2FGRGBKTNBIkBe62G5hwkfKUhWcUy6B9M4lxMs
 github.com/nixpare/process v1.7.0/go.mod h1:81OolzCsld+bbMG29WD3G8Cwfq5M/q3J+FBhCE9aNd4=
 github.com/nixpare/process v1.7.1 h1:XcRc8qJHtbI8Chl0MWwJT1LR9qtvRHqcG6hStKNP010=
 github.com/nixpare/process v1.7.1/go.mod h1:oRAaVWMEdZiyjYuM9u1tcPamT2Yuz1WRImgcjCE7xkE=
+github.com/nixpare/process v1.7.2 h1:VQ5nAIFaJGUl8krtUqfZRQnlB7uw6WIQwHih5cUN7rw=
+github.com/nixpare/process v1.7.2/go.mod h1:oRAaVWMEdZiyjYuM9u1tcPamT2Yuz1WRImgcjCE7xkE=
 github.com/nixpare/server/v3 v3.0.0-beta.6 h1:+SfdBSUf/jNb7HObL1X1FBmr9Y2c10tk8ONWAVzm4L0=
 github.com/nixpare/server/v3 v3.0.0-beta.6/go.mod h1:jqh9WHDC23EfDU99jWOBjnMa8lgdv19zdzN6wOChnuE=
 github.com/onsi/ginkgo/v2 v2.22.0 h1:Yed107/8DjTr0lKCNt7Dn8yQ6ybuDRQoMGrNFKzMfHg=

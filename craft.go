@@ -288,7 +288,7 @@ func getServerMapViewAssets(ctx *nix.Context) {
 		return
 	}
 
-	bluemapAssetsPath := filepath.Join(srv.process.Exec.Dir, "bluemap/web")
+	bluemapAssetsPath := filepath.Join(srv.process.WorkDir(), "bluemap/web")
 	info, err := os.Stat(bluemapAssetsPath)
 	if err != nil || !info.IsDir() {
 		ctx.Error(http.StatusNotFound, fmt.Sprintf("Server %s does not support Bluemap plugin", srvName))
