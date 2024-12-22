@@ -312,7 +312,6 @@ func (user *McUser) ConnectToServer(srvName string) error {
 	}
 
 	user.server = srv
-	MC.Logger.Debug(srv.privateInfo)
 	user.SignalStateUpdate()
 
 	return nil

@@ -1,9 +1,7 @@
 package craft
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"net"
 
 	"github.com/nixpare/logger/v3"
@@ -24,46 +22,75 @@ func startProxy(router *server.Router, msm *McServerManager) error {
 
 func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	addr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
+	var buf [1]byte
 
-	buf1 := make([]byte, 1024)
+	_, err := conn.Read(buf[:])
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading packet length: %v", err)
+		return
+	}
+
+	switch buf[0] {
+	case 0xFE: // legacy
+		msm.legacyProxyHandler(srv, conn, addr, buf[0])
+	default:
+		msm.newProxyHandler(srv, conn, addr, buf[0])
+	}
+}
+
+func (msm *McServerManager) newProxyHandler(srv *server.TCPServer, conn net.Conn, addr string, length byte) {
+	buf1 := make([]byte, length)
+
 	n, err := conn.Read(buf1)
 	if err != nil {
-		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading first packet: %v", err)
+		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading packet: %v", err)
+		return
+	}
+	buf1 = buf1[:n]
+
+	//packetID := buf1[0]
+	//protoVersion := buf[1]
+	//unknown := buf[2]
+	used := 3
+
+	_, n, err = decodeString(buf1[used:]) // server network address
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading server address: %v", err)
+		return
+	}
+	used += n
+
+	//port := binary.BigEndian.Uint16(buf1[used:used+2])
+	used += 2
+	packetType := buf1[used]
+
+	switch packetType {
+	case 0x1: // ping
+		payload := make([]byte, 1, len(buf1) + 1)
+		payload[0] = length
+		payload = append(payload, buf1...)
+
+		handlePingRequest(srv, conn, addr, payload)
 		return
 	}
 
-	packetID := buf1[0]
-
-	switch packetID {
-	case 0x12 /* vanilla */, 0x18 /* modrinth */, 0x10 /* multimc */ :
-		packetType := buf1[n-1]
-		msm.Logger.Debug(packetType, buf1[:n], string(buf1[:n]))
-		switch packetType {
-		case 0x1: // old ping
-			handlePingRequest(srv, conn, addr, buf1[:n])
-			return
-		case 0x2: // login start
-		default:
-			srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Unknown packetType: %d", packetType)
-			return
-		}
-
-	case 0xFE: // new ping
-		handlePingRequest(srv, conn, addr, buf1[:n])
-		return
-	default:
-		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Unknown packetID: %d", packetID)
+	var b [1]byte
+	_, err = conn.Read(b[:])
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading login packet length: %v", err)
 		return
 	}
 
-	buf2 := make([]byte, 1024)
+	buf2 := make([]byte, b[0])
 	n, err = conn.Read(buf2)
 	if err != nil {
 		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading login packet: %v", err)
 		return
 	}
+	buf2 = buf2[:n]
 
-	userName, err := readString(bytes.NewBuffer(buf2[2:n]))
+	// loginPacketID := buf2[0]
+	userName, _, err := decodeString(buf2[1:])
 	if err != nil {
 		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error decoding username form login packet: %v", err)
 		return
@@ -74,7 +101,7 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 		return
 	}
 
-	serverAddr := fmt.Sprintf("%s:%d", "127.0.0.1", mcServer.port)
+	serverAddr := fmt.Sprintf("localhost:%d", mcServer.port)
 	target, err := net.ResolveTCPAddr("tcp", serverAddr)
 	if err != nil {
 		srv.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error resolving server addr %s", serverAddr)
@@ -87,12 +114,24 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	}
 	defer proxy.Close()
 
+	_, err = proxy.Write([]byte{length})
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error writing back first packet length: %v", err)
+		return
+	}
+
 	_, err = proxy.Write(buf1)
 	if err != nil {
 		srv.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error writing back first packet: %v", err)
 		return
 	}
 	buf1 = nil
+
+	_, err = proxy.Write(b[:])
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_ERROR, "Error writing back second packet length: %v", err)
+		return
+	}
 
 	_, err = proxy.Write(buf2)
 	if err != nil {
@@ -110,6 +149,27 @@ func (msm *McServerManager) proxyHandler(srv *server.TCPServer, conn net.Conn) {
 	}()
 
 	server.TCPPipe(conn, proxy)
+}
+
+func (msm *McServerManager) legacyProxyHandler(srv *server.TCPServer, conn net.Conn, addr string, id byte) {
+	var buf [1]byte
+
+	_, err := conn.Read(buf[:])
+	if err != nil {
+		srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error reading packet type: %v", err)
+		return
+	}
+
+	packetType := buf[0]
+	switch packetType {
+	case 0x1: // ping
+		payload := [2]byte{id, buf[0]}
+
+		handlePingRequest(srv, conn, addr, payload[:])
+		return
+	}
+
+	srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Unknown legacy packet type %d", packetType)
 }
 
 func acceptConnection(msm *McServerManager, userName string, addr string) (*McUser, *McServer, bool) {
@@ -167,44 +227,31 @@ func handlePingRequest(srv *server.TCPServer, conn net.Conn, addr string, packet
 	server.TCPPipe(conn, proxy)
 }
 
-func readVarInt(rd io.Reader) (int32, error) {
-	var result int32
-	var length uint
+func decodeVarInt(data []byte) (int, int, error) {
+	var value int
+    var bytesRead int
 
-	byteRead := make([]byte, 1)
-	for {
-		_, err := rd.Read(byteRead)
-		if err != nil {
-			return 0, err
-		}
+    for i, b := range data {
+        value |= int(b & 0x7F) << (7 * i) // Estrai i primi 7 bit e aggiungili al valore
+        bytesRead++
 
-		value := byteRead[0]
-		result |= int32(value&0x7F) << (length * 7)
+        if b & 0x80 == 0 { // Se l'ottavo bit è 0, abbiamo finito
+            return value, bytesRead, nil
+        }
 
-		length++
-		if length > 5 {
-			return 0, fmt.Errorf("VarInt too long")
-		}
+        if i >= 4 { // VarInt può usare al massimo 5 byte
+            return 0, 0, fmt.Errorf("VarInt too long")
+        }
+    }
 
-		if (value & 0x80) == 0 {
-			break
-		}
-	}
-
-	return result, nil
+    return 0, 0, fmt.Errorf("not enough data to decode VarInt")
 }
 
-func readString(rd io.Reader) (string, error) {
-	strLen, err := readVarInt(rd)
+func decodeString(data []byte) (string, int, error) {
+	strLen, n, err := decodeVarInt(data)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	strBytes := make([]byte, strLen)
-	_, err = rd.Read(strBytes)
-	if err != nil {
-		return "", err
-	}
-
-	return string(strBytes), nil
+	return string(data[n:n+strLen]), n+strLen, nil
 }

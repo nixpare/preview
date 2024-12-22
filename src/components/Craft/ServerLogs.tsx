@@ -21,6 +21,10 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
 
         setTimeout(() => {
             serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'smooth' })
+
+            setTimeout(() => {
+                serverLogsEl.current?.scroll({ top: serverLogsEl.current.scrollHeight, behavior: 'instant' })
+            }, 1000)
         }, 100)
     }, [show, logs])
 
