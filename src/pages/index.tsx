@@ -1,21 +1,29 @@
 import './index.css'
 
-import { StrictMode, useEffect, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import axios from 'axios';
 import CraftServerList from '../components/Craft/CraftServerList';
 import CraftServer from '../components/Craft/CraftServer';
 import Footer from '../components/UI/Footer';
 import { Snackbar } from '@mui/material';
 import Navbar from '../components/UI/Navbar';
-import axios from 'axios';
-import { createRoot } from 'react-dom/client';
 import { ServersInfo } from '../models/Server';
 import { User } from '../models/User';
+import { wsCleanup } from '../utils/websocket';
 
-createRoot(document.getElementById('root')!).render(
+const App = (
 	<StrictMode>
 		<CraftHome />
 	</StrictMode>
 )
+
+const rootElement = document.getElementById("root");
+if (rootElement?.hasChildNodes()) {
+	hydrateRoot(rootElement, App)
+} else {
+	createRoot(rootElement!).render(App)
+}
 
 let serversWS = false as WebSocket | boolean
 let userWS = false as WebSocket | boolean
@@ -35,7 +43,9 @@ function CraftHome() {
 
 		serversWS = true
 		startServersInfoWS(setServers, showMessage)
-	})
+
+		return () => { wsCleanup(serversWS) }
+	}, [])
 
 	const [user, setUser] = useState(undefined as User | undefined)
 	useEffect(() => {
@@ -43,7 +53,9 @@ function CraftHome() {
 
 		userWS = true
 		startUserInfoWS(setUser, showMessage)
-	}, [userWS])
+
+		return () => { wsCleanup(userWS) }
+	}, [])
 
 	const [currentServer, setCurrentServer] = useState(localStorage.getItem('selectedServer'));
 	useEffect(() => {
@@ -120,6 +132,7 @@ async function startServersInfoWS(
 		});
 
 	if (response == undefined) return
+	setServersInfo(response.data)
 
 	serversWS = new WebSocket(url)
 
@@ -130,7 +143,7 @@ async function startServersInfoWS(
 		setServersInfo(JSON.parse(ev.data))
 	}
 	serversWS.onerror = () => {
-		onMessage('Server connection error')
+		onMessage('Server list connection error')
 	}
 }
 
@@ -146,6 +159,7 @@ async function startUserInfoWS(
 		});
 
 	if (response == undefined) return
+	setUserInfo(response.data)
 
 	userWS = new WebSocket(url)
 
@@ -156,6 +170,6 @@ async function startUserInfoWS(
 		setUserInfo(JSON.parse(ev.data))
 	}
 	userWS.onerror = () => {
-		onMessage('Server connection error')
+		onMessage('User info connection error')
 	}
 }

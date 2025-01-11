@@ -5,14 +5,21 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { Snackbar } from '@mui/material';
 import { StrictMode, useState } from 'react';
 import Navbar from '../components/UI/Navbar';
-import { createRoot } from 'react-dom/client';
+import { createRoot, hydrateRoot } from 'react-dom/client';
 import Footer from '../components/UI/Footer';
 
-createRoot(document.getElementById('root')!).render(
+const App = (
   <StrictMode>
     <CraftLogin />
-  </StrictMode>,
+  </StrictMode>
 )
+
+const rootElement = document.getElementById("root");
+if (rootElement?.hasChildNodes()) {
+  hydrateRoot(rootElement, App)
+} else {
+  createRoot(rootElement!).render(App)
+}
 
 type FormValues = {
   username: string;

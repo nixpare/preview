@@ -188,23 +188,25 @@ func (srv *McServer) Stop() error {
 	}
 
 	onlinePlayers := len(srv.Players) > 0
+	
+	go func() {
+		if onlinePlayers {
+			srv.process.SendText("/title @a times 0.5s 0.3s 0.5s")
+			shutdownInProgressSubtitle := "/title @a subtitle {\"text\": \"Server is going to shut down\"}"
 
-	if onlinePlayers {
-		srv.process.SendText("/title @a times 0.5s 0.3s 0.5s")
-		shutdownInProgressSubtitle := "/title @a subtitle {\"text\": \"Server is going to shut down\"}"
+			for i := range 5 {
+				srv.process.SendText(fmt.Sprintf("/title @a title {\"text\": \"%d\"}", 5-i))
+				srv.process.SendText(shutdownInProgressSubtitle)
+				time.Sleep(time.Second)
+			}
 
-		for i := range 5 {
-			srv.process.SendText(fmt.Sprintf("/title @a title {\"text\": \"%d\"}", 5-i))
-			srv.process.SendText(shutdownInProgressSubtitle)
+			srv.process.SendText("/title @a times 1s 0s 1s")
+			srv.process.SendText("/title @a title {\"text\": \"Server is shutting down\"}")
 			time.Sleep(time.Second)
 		}
 
-		srv.process.SendText("/title @a times 1s 0s 1s")
-		srv.process.SendText("/title @a title {\"text\": \"Server is shutting down\"}")
-		time.Sleep(time.Second * 2)
-	}
-
-	srv.process.SendText("stop")
+		srv.process.SendText("stop")
+	}()
 
 	exitStatus := srv.process.Wait()
 	if exitStatus.Error() != nil {

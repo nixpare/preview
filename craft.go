@@ -114,7 +114,6 @@ func Nixcraft() http.Handler {
 	mux := http.NewServeMux()
 	n := nix.New(
 		nix.CookieManagerOption(cookieManager),
-		nix.EnableLoggingOption(),
 		nix.LoggerOption(MC.Logger.Clone(nil, true, "http")),
 		nix.EnableErrorCaptureOption(),
 		nix.EnableRecoveryOption(),
@@ -483,6 +482,7 @@ func wsServersInfo(ctx *nix.Context) {
 	}
 
 	if !ctx.IsWebSocketRequest() {
+		ctx.JSON(MC.generateState())
 		return
 	}
 
@@ -519,6 +519,7 @@ func wsUserInfo(ctx *nix.Context) {
 	}
 
 	if !ctx.IsWebSocketRequest() {
+		ctx.JSON(user.user.generateState())
 		return
 	}
 
@@ -568,7 +569,8 @@ func wsServerConsole(ctx *nix.Context) {
 
 	srv, ok := MC.GetServer(srvName)
 	if !ok {
-		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s not found", srvName))
+		msg := fmt.Sprintf("Server %s not found", srvName)
+		ctx.Error(http.StatusBadRequest, msg, msg)
 		return
 	}
 
@@ -579,14 +581,21 @@ func wsServerConsole(ctx *nix.Context) {
 	srv.mutex.RUnlock()
 
 	if l == nil {
-		ctx.Error(http.StatusBadRequest, fmt.Sprintf("Server %s was never started", srvName))
+		msg := fmt.Sprintf("Server %s was never started", srvName)
+		ctx.Error(http.StatusBadRequest, msg, msg)
 		return
 	}
+
+	prevLogsN, ch := l.ListenForLogs(20)
+	defer ch.Unregister()
+	prevLogs := l.GetLogs(0, prevLogsN)
 
 	// Questo permette al client prima di inviare una richiesta http normale e vedere se ci può
 	// essere qualche errore, quindi in caso di richiesta valida allora aprirà la connessione
 	// websocket vera
 	if !ctx.IsWebSocketRequest() {
+		data, _ := json.Marshal(prevLogs)
+		ctx.JSON(data)
 		return
 	}
 
@@ -595,10 +604,6 @@ func wsServerConsole(ctx *nix.Context) {
 		ctx.Error(http.StatusBadRequest, "Invalid Request", err)
 	}
 	defer conn.CloseNow()
-
-	prevLogsN, ch := l.ListenForLogs(20)
-	defer ch.Unregister()
-	prevLogs := l.GetLogs(0, prevLogsN)
 
 	for _, log := range prevLogs {
 		err := conn.Write(ctx.R().Context(), websocket.MessageText, log.JSON())

@@ -3,15 +3,16 @@ import './ServerLogs.css'
 import { useEffect, useState, MouseEvent, useRef } from "react";
 import SendCommand from './SendCommand';
 import { ParsedLog, ServerLog } from '../../models/Logs';
-import { getWS } from './CraftServer';
+import { getLogsWS } from './CraftServer';
 
 type ServerLogsProps = {
+    serverName: string;
     logs: ParsedLog[];
     show: boolean;
     showMessage: (message: string) => void;
 }
 
-export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps) {
+export default function ServerLogs({ serverName, logs, show, showMessage }: ServerLogsProps) {
     const serverLogsEl = useRef<HTMLDivElement>(null);
     const [scrollAtBottom, setScrollAtBottom] = useState(true)
 
@@ -37,7 +38,7 @@ export default function ServerLogs({ logs, show, showMessage }: ServerLogsProps)
     }
 
     const send = (cmd: string) => {
-        const ws = getWS()
+        const ws = getLogsWS(serverName)
         if (!ws) {
             showMessage('Could not send command to server')
             return

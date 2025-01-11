@@ -9,6 +9,7 @@ import { Updater, useImmer } from 'use-immer';
 import { Logs } from '../../models/Logs';
 import { User } from '../../models/User';
 import axios from 'axios';
+import { wsCleanup, wsIsActive } from '../../utils/websocket';
 
 type Section = 'info' | 'chat' | 'logs'
 
@@ -36,19 +37,26 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
     }, [serverName])
 
     useEffect(() => {
-        cleanup()
+        const callback = () => {
+            if (!wsIsActive(logsWS[server.name]))
+                return
 
-        if ((ws && !wsIsActive(ws)))
-            return cleanup
+            const ws = logsWS[server.name]
+            logsWS[server.name] = false
+            wsCleanup(ws)
+        }
 
-        ws = true
+        if (logsWS[server.name])
+            return callback
+
+        logsWS[server.name] = true
         queryServerLogs(
             server.name, user,
             updateLogs, showMessage
         );
 
-        return cleanup
-    }, [server]);
+        return callback
+    }, [server.name, server.running]);
 
     return (
         <div className="selected-server">
@@ -59,7 +67,7 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
                 </div>
                 <ServerType server={server} />
             </div>
-            
+
 
             <button className="close-button" onClick={closeServer}>
                 <i className="fa-solid fa-xmark"></i>
@@ -98,6 +106,7 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
                     showMessage={showMessage}
                 />
                 <ServerLogs
+                    serverName={serverName}
                     logs={logs.rawLogs}
                     show={section == 'logs'}
                     showMessage={showMessage}
@@ -107,7 +116,7 @@ export default function CraftServer({ user, server, serverName, closeServer, sho
     )
 }
 
-let ws = false as WebSocket | boolean
+let logsWS: Record<string, WebSocket | boolean> = {}
 
 async function queryServerLogs(
     serverName: string, user: User,
@@ -121,20 +130,19 @@ async function queryServerLogs(
         });
 
     if (response == undefined) {
-        ws = false
+        logsWS[serverName] = false
         return
     }
 
-    ws = new WebSocket(url)
+    const ws = new WebSocket(url)
+    logsWS[serverName] = ws
+
     ws.onopen = () => {
         updateLogs((logs) => {
             // settare length a 0 è più efficiente e non fa arrabbiare il compilatore
             logs.rawLogs.length = 0
             logs.chat.length = 0
         });
-    }
-    ws.onclose = () => {
-        ws = false
     }
     ws.onmessage = (ev) => {
         updateLogs(logs => {
@@ -144,20 +152,12 @@ async function queryServerLogs(
         })
     }
     ws.onerror = () => {
-        showMessage('Server connection error')
+        showMessage('Server logs connection error')
     }
 }
 
-function cleanup() {
-    wsIsActive(ws) && ws.close()
-}
-
-function wsIsActive(ws: WebSocket | boolean): ws is WebSocket {
-    // @ts-ignore
-    return ws && ws.close
-}
-
-export function getWS(): WebSocket | null {
+export function getLogsWS(serverName: string): WebSocket | null {
+    const ws = logsWS[serverName]
     if (wsIsActive(ws)) {
         return ws
     } else {
