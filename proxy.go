@@ -3,10 +3,13 @@ package craft
 import (
 	"fmt"
 	"net"
+	"runtime/debug"
 
 	"github.com/nixpare/logger/v3"
 	"github.com/nixpare/server/v3"
 )
+
+const debug_mode = false
 
 func startProxy(router *server.Router, msm *McServerManager) error {
 	tcpSrv, err := router.NewTCPServer("", mc_public_port, false)
@@ -14,7 +17,19 @@ func startProxy(router *server.Router, msm *McServerManager) error {
 		return err
 	}
 
-	tcpSrv.ConnHandler = msm.proxyHandler
+	tcpSrv.ConnHandler = func(srv *server.TCPServer, conn net.Conn) {
+		defer func() {
+			if a := recover(); a != nil {
+				if debug_mode {
+					srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error during craft proxy conn: [%v] %v\n%s", conn.RemoteAddr(), a, debug.Stack())
+				} else {
+					srv.Logger.Printf(logger.LOG_LEVEL_WARNING, "Error during craft proxy conn: [%v] %v", conn.RemoteAddr(), a)
+				}
+			}
+		}()
+
+		msm.proxyHandler(srv, conn)
+	}
 	tcpSrv.Start()
 
 	return nil
